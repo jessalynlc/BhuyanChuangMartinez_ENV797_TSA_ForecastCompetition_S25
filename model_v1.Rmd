@@ -57,43 +57,41 @@ summary(load_processed)
 
 #Turn load into time series data
 n_h <- ncol(load_processed)-2
-ts_load_data <- ts(load_processed[,3:(2+n_h)], start = c(2005, 1), frequency = 365)
+ts_load_daily <- msts(load_processed[,3:(2+n_h)], seasonal.periods = c(7,365.25), start = c(2005, 1,1))
+
 #cleaning out the NAs for h2
-ts_load_data[, 2] <- tsclean(ts_load_data[, 2])
+ts_load_daily[, 2] <- tsclean(ts_load_daily[, 2])
 ```
 
 #Creating training and testing subsets
 ```{r message=FALSE, warning=FALSE}
-#create a subset for training purpose
-n_for = 365
-ts_load_train <- subset(ts_load_data,
-                        end = nrow(ts_load_data)-n_for) #stops 365 days before
+n_for <- 365
 
-#create a subset for testing purpose
-ts_load_test <- subset(ts_load_data,
-                       start = nrow(ts_load_data)-n_for) #last 365 observations
+# Get number of time steps
+n_obs <- nrow(ts_load_daily)
 
-#Plot of each sensor's data in the training set
+#Get cutoff point for train/test
+cut_point <- n_obs - n_for
+
+# TRAIN SET (chatGPT said to use window instead to make the proper multivariate time series slices!)
+ts_load_train <- window(ts_load_daily, end = time(ts_load_daily)[cut_point])
+
+# TEST SET
+ts_load_test <- window(ts_load_daily, start = time(ts_load_daily)[cut_point + 1])
+```
+
+#Plotting Data
+```{r message=FALSE, warning=FALSE}
 for (i in 1:n_h) {
-  sensor_ts <- ts_load_train[, i]  # Extract single time series
+  train_ts <- ts_load_train[, i]
+  test_ts  <- ts_load_test[, i]
+  
   print(
-    autoplot(sensor_ts) +
-      ggtitle(paste0("Load: ", colnames(ts_load_train)[i])) +
+    autoplot(train_ts, series = "Train") +
+      autolayer(test_ts, series = "Test") +
+      ggtitle(paste("Train vs Test for", colnames(ts_load_daily)[i])) +
       ylab("Load") +
-      xlab("Time") +
-      theme_minimal()
-  )
-}
-
-#Plot of each sensor's data in the test set
-for (i in 1:n_h) {
-  sensor_ts <- ts_load_test[, i]  # Extract single time series
-  print(
-    autoplot(sensor_ts) +
-      ggtitle(paste0("Load: ", colnames(ts_load_test)[i])) +
-      ylab("Load") +
-      xlab("Time") +
-      theme_minimal()
+      xlab("Time")
   )
 }
 ```
