@@ -1,0 +1,99 @@
+---
+title: "Kaggle: Model version 1"
+always_allow_html: true
+editor_options: 
+  chunk_output_type: inline
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,tidy.opts=list(width.cutoff=80), tidy=FALSE) 
+```
+
+```{r package, message=FALSE, warning=FALSE}
+library(lubridate)
+library(ggplot2)
+library(forecast)  
+library(Kendall)
+library(tseries)
+library(outliers)
+library(tidyverse)
+library(smooth)
+library(zoo)
+library(kableExtra)
+library(readxl)
+library(xts)
+```
+
+```{r}
+#Importing time series data (relative humidity and temperature optional but importing)
+
+#load data: this is daily data, with 24 different sensors
+load_data <- read_excel(
+  path = "./Data/load.xlsx",
+  sheet = 1
+)
+
+#relative humidity: hourly data, with 28 different sensors
+relative_humidity_data <- read_excel(
+  path = "./Data/relative_humidity.xlsx",
+  sheet = 1
+)
+
+#temperature data: hourly data, with 28 different sensors
+temperature_data <- read_excel(
+  path = "./Data/temperature.xlsx",
+  sheet = 1
+)
+
+#Preparing load data - create date object
+load_processed <- load_data %>%
+  mutate(date = ymd(date))
+
+summary(load_processed)
+
+#There are 6 NAs in h2
+
+#Turn load into time series data
+n_h <- ncol(load_processed)-2
+ts_load_data <- ts(load_processed[,3:(2+n_h)], start = c(2005, 1), frequency = 365)
+#cleaning out the NAs for h2
+ts_load_data[, 2] <- tsclean(ts_load_data[, 2])
+```
+
+#Creating training and testing subsets
+```{r message=FALSE, warning=FALSE}
+#create a subset for training purpose
+n_for = 365
+ts_load_train <- subset(ts_load_data,
+                        end = nrow(ts_load_data)-n_for) #stops 365 days before
+
+#create a subset for testing purpose
+ts_load_test <- subset(ts_load_data,
+                       start = nrow(ts_load_data)-n_for) #last 365 observations
+
+#Plot of each sensor's data in the training set
+for (i in 1:n_h) {
+  sensor_ts <- ts_load_train[, i]  # Extract single time series
+  print(
+    autoplot(sensor_ts) +
+      ggtitle(paste0("Load: ", colnames(ts_load_train)[i])) +
+      ylab("Load") +
+      xlab("Time") +
+      theme_minimal()
+  )
+}
+
+#Plot of each sensor's data in the test set
+for (i in 1:n_h) {
+  sensor_ts <- ts_load_test[, i]  # Extract single time series
+  print(
+    autoplot(sensor_ts) +
+      ggtitle(paste0("Load: ", colnames(ts_load_test)[i])) +
+      ylab("Load") +
+      xlab("Time") +
+      theme_minimal()
+  )
+}
+```
