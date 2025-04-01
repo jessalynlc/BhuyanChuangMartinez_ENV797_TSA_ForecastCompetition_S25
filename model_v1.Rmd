@@ -95,3 +95,17 @@ for (i in 1:n_h) {
   )
 }
 ```
+
+```{r}
+for (i in 1:n_h) {
+  sensor_ts <- ts_load_daily[, i]
+  sensor_decomp <- mstl(sensor_ts)
+  
+  print(
+    autoplot(sensor_decomp) +
+      ggtitle(paste("MSTL Decomposition -", colnames(ts_load_daily)[i])) +
+      theme_minimal()
+  )
+}
+```
+
