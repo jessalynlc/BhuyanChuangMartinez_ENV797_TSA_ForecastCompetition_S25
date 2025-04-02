@@ -284,3 +284,76 @@ kable(comparison, caption = "Model Comparison on Validation Data")
 
 ```
 
+## Final forecast for all models
+```{r}
+# submission forecast horizon: 59 days (from Jan 1, 2011 to Feb 28, 2011)
+horizon_final <- 59
+
+# I create the full time series object from my merged daily dataset (full_daily).
+# This msts object captures both weekly (7-day) and annual (365.25-day) seasonal patterns.
+full_ts <- msts(full_daily$daily_avg_load, 
+                seasonal.periods = c(7, 365.25), 
+                start = decimal_date(as.Date("2005-01-01")))
+
+### Final Forecast using STL + ETS
+# I re-fit the STL + ETS model on the full time series and forecast for the submission period.
+final_forecast_stl <- stlf(full_ts, 
+                           h = horizon_final, 
+                           method = "ets", 
+                           s.window = "periodic", 
+                           robust = TRUE)
+
+# Plot
+autoplot(final_forecast_stl) + 
+  ggtitle("Model 1: STL_ETS (Full Set)") +
+  ylab("Electricity Demand")
+
+# I create a data frame for the STL+ETS forecast using the provided template.
+final_forecast_stl_df <- data.frame(
+  date = seq(as.Date("2011-01-01"), by = "day", length.out = horizon_final),
+  Model = "STL+ETS",
+  forecast = as.numeric(final_forecast_stl$mean)
+)
+
+### Final Forecast using ARIMA + Fourier Terms
+# I generate Fourier terms on the full time series
+
+fourier_terms_full <- fourier(full_ts, K = c(2, 6))
+# ARIMA model on the full time series using these Fourier terms as exogenous regressors.
+fit_arima_four_full <- auto.arima(full_ts, xreg = fourier_terms_full, seasonal = FALSE, lambda = 0)
+# Fourier terms for the submission period forecast.
+fourier_terms_sub <- fourier(full_ts, K = c(2, 6), h = horizon_final)
+# Forecasting using the fitted ARIMA model.
+final_forecast_arima <- forecast(fit_arima_four_full, xreg = fourier_terms_sub, h = horizon_final)
+# creating a data frame for the ARIMA+Fourier forecast.
+final_forecast_arima_df <- data.frame(
+  date = seq(as.Date("2011-01-01"), by = "day", length.out = horizon_final),
+  Model = "ARIMA+Fourier",
+  forecast = as.numeric(final_forecast_arima$mean)
+)
+
+### Final Forecast using TBATS
+# TBATS model on the full time series.
+fit_tbats_full <- tbats(full_ts)
+# forecast for the submission period using the TBATS model.
+final_forecast_tbats <- forecast(fit_tbats_full, h = horizon_final)
+# data frame for the TBATS forecast.
+final_forecast_tbats_df <- data.frame(
+  date = seq(as.Date("2011-01-01"), by = "day", length.out = horizon_final),
+  Model = "TBATS",
+  forecast = as.numeric(final_forecast_tbats$mean)
+)
+```
+### Saving the forecast
+```{r}
+# STL forecast
+write.csv(final_forecast_stl_df, file = "submission_forecast_stl.csv", row.names = FALSE)
+
+# ARIMA forecast
+write.csv(final_forecast_arima_df, file = "submission_forecast_arima.csv", row.names = FALSE)
+
+# TBATS forecast
+write.csv(final_forecast_tbats_df, file = "submission_forecast_tbats.csv", row.names = FALSE)
+```
+
+
