@@ -1,0 +1,212 @@
+---
+title: "Kaggle: Model version 1"
+always_allow_html: true
+editor_options: 
+  chunk_output_type: inline
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,tidy.opts=list(width.cutoff=80), tidy=FALSE) 
+```
+
+```{r package, message=FALSE, warning=FALSE}
+library(lubridate)
+library(ggplot2)
+library(forecast)  
+library(Kendall)
+library(tseries)
+library(outliers)
+library(tidyverse)
+library(smooth)
+library(zoo)
+library(kableExtra)
+library(readxl)
+library(xts)
+```
+
+```{r}
+#Importing time series data (relative humidity and temperature optional but importing)
+
+#load data: this is daily data, with 24 different sensors
+load_data <- read_excel(
+  path = "./Data/load.xlsx",
+  sheet = 1
+)
+
+#There are 6 NA  andd 17 zeros in data. They would have low impact in the overall
+sum(is.na(load_data))
+sum(load_data == 0, na.rm = TRUE)
+
+#relative humidity: hourly data, with 28 different sensors
+#I would estimate a mean 
+relative_humidity_data <- read_excel(
+  path = "./Data/relative_humidity.xlsx",
+  sheet = 1
+)
+
+#There are 0 NA and 30 zeros. They would have low impact
+sum(is.na(relative_humidity_data))
+sum(relative_humidity_data == 0, na.rm = TRUE)
+
+#temperature data: hourly data, with 28 different sensors
+temperature_data <- read_excel(
+  path = "./Data/temperature.xlsx",
+  sheet = 1
+)
+
+#There are 0 NA and one zero. They would have low impact
+sum(is.na(temperature_data))
+sum(temperature_data == 0, na.rm = TRUE)
+
+```
+
+```{r}
+#Preparing load data - wrangling to allow the estimation per year, month, day, hour
+load_processed <- load_data %>%
+  pivot_longer(cols = starts_with("h"), 
+               names_to = "hour", 
+               values_to = "electricity_demand") %>%
+  mutate(hour = as.integer(sub("h", "", hour)),
+  date = ymd(date),  
+  year = year(date), 
+  month = month(date), 
+  day = day(date)) %>% 
+  select(date, year, month, day, hour, electricity_demand)
+
+
+
+```
+
+```{r message=FALSE, warning=FALSE}
+#Creating a data frame with hourly observations
+electricity_hourly <- load_processed %>% 
+  filter( !is.na(electricity_demand)) %>% 
+  group_by(date,year,month,day, hour) %>%
+  summarise( hourly_demand = mean(electricity_demand))
+
+ggplot(electricity_hourly, aes(x=date,y=hourly_demand)) +
+  geom_line() +
+  ylab("Hourly Demand of Electricity")
+
+#Creating a data frame with daily observations
+electricity_daily <- electricity_hourly %>% 
+  filter( !is.na(hourly_demand)) %>% 
+  group_by(date,year,month,day) %>%
+  summarise( daily_demand = mean(hourly_demand))
+
+ggplot(electricity_daily, aes(x=date,y=daily_demand)) +
+  geom_line() +
+  ylab("Daily Demand of Electricity")
+
+```
+```{r message=FALSE, warning=FALSE}
+ts_electricity_hourly <- msts(electricity_hourly$hourly_demand, 
+                            seasonal.periods =c(24,168,8766),
+                            start=c(2005,01,01))
+
+ts_electricity_daily <- msts(electricity_daily$daily_demand, 
+                           seasonal.periods =c(7, 365.25),
+                           start=c(2005,01,01))
+
+```
+
+```{r message=FALSE, warning=FALSE}
+## ts_act_power_daily %>% mstl() = mstl(ts_act_power_daily)
+ts_electricity_hourly %>% mstl() %>%
+  autoplot()
+
+ts_electricity_daily %>% mstl() %>%
+  autoplot()
+
+```
+When running `msts()` for the hourly data,the residuals level are higher, so we opted to use the data for daily estimations, for the forecast.
+
+#Creating training and testing subsets
+```{r message=FALSE, warning=FALSE}
+n_for <- 365
+n_jan <- 1
+n_feb <- 59
+
+# Define the training set to end on December 31, 2009
+ts_daily_train <- window(ts_electricity_daily, end = c(2009, n_for))
+
+# Define the test set for January 1, 2010, to February 28, 2010
+ts_daily_test <- window(ts_electricity_daily, start = c(2010, n_jan), end = c(2010, n_feb))
+
+# Visualize the results
+autoplot(ts_daily_train)
+autoplot(ts_daily_test)
+
+```
+
+### Testing Model 1: STL + ETS
+```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+#Fit and forecast STL + ETS model to data
+electricity_fit <-  stlf(ts_daily_train,h=n_feb)
+
+#Plot foresting results
+autoplot(electricity_fit) + ylab("Electricity Demand January-Feb")
+
+#Plot model + observed data
+autoplot(ts_electricity_daily) +
+  autolayer(electricity_fit, series="STL + ETS",PI=FALSE) +
+  ylab("Electricity Demand January-Feb")
+```
+### Testing Model 2: ARIMA
+```{r ARIMA, echo=TRUE, message=FALSE, warning=FALSE}
+#Fit arima model with fourier terms as exogenous regressors
+# seasonal = FALSE is the same as P=D=Q=0
+# play with K by changing it to K=c(2,2), K=c(2,4), K=c(2,6), etc. The higher teh K the longer it will take to converge, because R will try more models.
+
+ARIMA_Four_fit <- auto.arima(ts_daily_train, 
+                             seasonal=FALSE, 
+                             lambda=0,
+                             xreg=fourier(ts_daily_train, 
+                                          K=c(2,6))
+                             )
+
+#Forecast with ARIMA fit
+#also need to specify h for fourier terms
+ARIMA_Four_for <- forecast(ARIMA_Four_fit,
+                           xreg=fourier(ts_daily_train,
+                                        K=c(2,6),
+                                        h=n_feb),
+                           h=n_feb
+                           ) 
+
+#Plot foresting results
+autoplot(ARIMA_Four_for) + ylab("Electricity Demand January-Feb")
+
+#Plot model + observed data
+autoplot(ts_electricity_daily) +
+  autolayer(ARIMA_Four_for, series="ARIMA_FOURIER",PI=FALSE) +
+  ylab("Electricity Demand January-Feb")
+
+```
+### Testing Model 3:  TBATS
+```{r TBATS, echo=TRUE, message=FALSE, warning=FALSE}
+# TBATS can take time to fit
+TBATS_fit <- tbats(ts_daily_train)
+
+TBATS_for <- forecast(TBATS_fit, h= n_feb)
+
+#Plot foresting results
+autoplot(TBATS_for) +
+  ylab("Electricity Demand January-Feb") 
+
+#Plot model + observed data
+autoplot(ts_electricity_daily) +
+  autolayer(TBATS_for, series="TBATS",PI=FALSE)+
+  ylab("Electricity Demand January-Feb") 
+
+#Arranging the forecasted values in a dataframe
+forecast_dates <- seq(from = as.Date("2010-01-01"), to = as.Date("2010-02-28"), by = "day")
+# Create the data frame combining the dates and the forecasted values
+forecast_TBATS_train <- data.frame(
+  date = forecast_dates,
+  forecast_demand_train = TBATS_for$mean
+)
+```
+
