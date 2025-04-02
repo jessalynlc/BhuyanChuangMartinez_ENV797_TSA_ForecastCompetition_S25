@@ -110,9 +110,6 @@ temp_processed <- temperature_data %>%
     day = day(date)
   ) %>% 
   select(date, year, month, day, hour, temperature)
-
-
-
 ```
 ## Converting to daily by taking averages
 
@@ -189,7 +186,7 @@ autoplot(electricity_fit) +
   ggtitle("Model 1: STL + ETS Forecast (Test Set)") +
   ylab("Electricity Demand January-February 2010")
 
-# Overlay the forecast on the full series (optional)
+# Overlaying the forecast on the full series 
 autoplot(ts_electricity_daily) +
   autolayer(electricity_fit, series = "STL + ETS", PI = FALSE) +
   ggtitle("Model 1: STL + ETS Forecast vs. Observed") +
@@ -201,9 +198,9 @@ accuracy_stl_ets
 ```
 ### Testing Model 2: ARIMA + Fourier
 ```{r ARIMA, echo=TRUE, message=FALSE, warning=FALSE}
-#Fit arima model with fourier terms as exogenous regressors
+#Fitting arima model with fourier terms as exogenous regressors
 # seasonal = FALSE is the same as P=D=Q=0
-# play with K by changing it to K=c(2,2), K=c(2,4), K=c(2,6), etc. The higher teh K the longer it will take to converge, because R will try more models.
+# play with K by changing it to K=c(2,2), K=c(2,4), K=c(2,6), etc. The higher the K the longer it will take to converge, because R will try more models.
 
 # Generating Fourier terms for the training set
 fourier_terms_train <- fourier(ts_daily_train, K = c(2, 6))
@@ -346,13 +343,30 @@ final_forecast_tbats_df <- data.frame(
 ```
 ### Saving the forecast
 ```{r}
-# STL forecast
+
+template <- read_excel("./Data/load.xlsx")
+
+# STL forecast according to template
+final_forecast_stl_df <- final_forecast_stl_df %>% 
+  rename(load = forecast) %>%  
+  select(date, load)
+
 write.csv(final_forecast_stl_df, file = "submission_forecast_stl.csv", row.names = FALSE)
 
-# ARIMA forecast
+
+
+# ARIMA forecast according to template
+final_forecast_arima_df <- final_forecast_arima_df %>% 
+  rename(load = forecast) %>%  
+  select(date, load)
+
 write.csv(final_forecast_arima_df, file = "submission_forecast_arima.csv", row.names = FALSE)
 
 # TBATS forecast
+final_forecast_tbats_df <- final_forecast_tbats_df %>% 
+  rename(load = forecast) %>%  
+  select(date, load)
+
 write.csv(final_forecast_tbats_df, file = "submission_forecast_tbats.csv", row.names = FALSE)
 ```
 
