@@ -203,7 +203,7 @@ accuracy(TBATS_for, ts_load_test)
 ```
 #With the best model, fit on the full dataset and forecast the next 59 days
 ```{r}
-TBATS_fit <- tbats(ts_load_daily)
+TBATS_fit <- tbats(ts_load_daily, seasonal.periods = c(7, 365.25))
 TBATS_for <- forecast(TBATS_fit, h=365)
 
 autoplot(TBATS_for) +
@@ -286,4 +286,21 @@ ARIMA_Four_forecast_df <- data.frame(
 )
 
 write.csv(ARIMA_Four_forecast_df, file = "submission_ARIMA.csv", row.names = FALSE)
+```
+
+#STL + ETS forecast (did not do great!)
+```{r}
+#Fit and forecast STL + ETS model to data
+ETS_fit <-  stlf(ts_load_daily,h=59)
+
+#Plot foresting results
+autoplot(ETS_fit) + ylab("Load")
+
+#Plot model + observed data
+autoplot(ts_load_daily) +
+  autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
+  ylab("Load")
+
+forecast_df <- as_tibble(ETS_fit)
+write.csv(forecast_df, file = "submission_stlf.csv", row.names = FALSE)
 ```
