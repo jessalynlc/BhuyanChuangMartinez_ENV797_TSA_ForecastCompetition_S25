@@ -72,6 +72,14 @@ temperature_processed <- temperature_data %>%
   summarise(daily_avg_temp = mean(avg_temp, na.rm = TRUE)) %>%
   ungroup()
 
+ts_humidity <- ts(relative_humidity_processed$daily_avg_humidity,
+                           start=c(2005,1),
+                           frequency=365) 
+
+ts_temperature <- ts(temperature_processed$daily_avg_temp,
+                           start=c(2005,1),
+                           frequency=365) 
+
 relative_humidity_vector <- relative_humidity_processed %>%
   rowwise() %>%
   mutate(avg_rh = mean(c_across(where(is.numeric)), na.rm = TRUE)) %>%
@@ -195,7 +203,7 @@ accuracy(TBATS_for, ts_load_test)
 ```
 #With the best model, fit on the full dataset and forecast the next 59 days
 ```{r}
-TBATS_fit <- tbats(ts_load_daily)
+TBATS_fit <- tbats(ts_load_daily, seasonal.periods = c(7, 365.25))
 TBATS_for <- forecast(TBATS_fit, h=365)
 
 autoplot(TBATS_for) +
@@ -222,12 +230,16 @@ ARIMA_Four_fit <- auto.arima(ts_load_daily,
 
 #Forecast with ARIMA fit
 #Need to forecast relative humidity and temperature
-ts_rh <- ts(relative_humidity_vector, frequency = 365.25)
-ts_temp <- ts(temperature_vector, frequency = 365.25)
-rh_forecast <- forecast(auto.arima(ts_rh), h = 59)
-temp_forecast <- forecast(auto.arima(ts_temp), h = 59)
-future_rh <- as.numeric(rh_forecast$mean)
-future_temp <- as.numeric(temp_forecast$mean)
+
+# Auto seasonal ARIMA for humidity
+fit_humidity <- auto.arima(ts_humidity, seasonal = TRUE)
+
+# Auto seasonal ARIMA for temperature
+fit_temperature <- auto.arima(ts_temperature, seasonal = TRUE)
+
+# Forecasting (e.g., 12 months ahead)
+forecast_humidity <- forecast(fit_humidity, h = 59)
+forecast_temperature <- forecast(fit_temperature, h = 59)
 
 #also need to specify h for fourier terms
 future_fourier <- fourier(ts_load_daily, K = c(2, 4), h = 59)
@@ -247,4 +259,48 @@ ARIMA_Four_forecast_df <- data.frame(
 )
 
 write.csv(ARIMA_Four_forecast_df, file = "submission_ARIMA.csv", row.names = FALSE)
+```
+
+#ARIMA without exogenous variable
+```{r}
+ARIMA_Four_fit <- auto.arima(ts_load_daily, 
+                             seasonal=FALSE, 
+                             lambda=0,
+                             xreg=fourier(ts_load_daily, 
+                                          K=c(2,4))
+                             )
+
+#Forecast with ARIMA fit
+ARIMA_Four_for <- forecast(ARIMA_Four_fit,
+                           xreg=fourier(ts_load_daily,
+                                        K=c(2,4),
+                                        h=59),
+                           h=59
+                           ) 
+
+autoplot(ARIMA_Four_for) + ylab("Load")
+
+ARIMA_Four_forecast_df <- data.frame(
+  date = time(ARIMA_Four_for$mean),
+  load = as.numeric(ARIMA_Four_for$mean)
+)
+
+write.csv(ARIMA_Four_forecast_df, file = "submission_ARIMA.csv", row.names = FALSE)
+```
+
+#STL + ETS forecast (did not do great!)
+```{r}
+#Fit and forecast STL + ETS model to data
+ETS_fit <-  stlf(ts_load_daily,h=59)
+
+#Plot foresting results
+autoplot(ETS_fit) + ylab("Load")
+
+#Plot model + observed data
+autoplot(ts_load_daily) +
+  autolayer(ETS_fit, series="STL + ETS",PI=FALSE) +
+  ylab("Load")
+
+forecast_df <- as_tibble(ETS_fit)
+write.csv(forecast_df, file = "submission_stlf.csv", row.names = FALSE)
 ```
