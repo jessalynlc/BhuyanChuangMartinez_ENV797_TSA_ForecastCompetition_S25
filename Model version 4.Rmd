@@ -1,9 +1,9 @@
 ---
-title: "Kaggle: Model version 4"
+title: 'Kaggle: Model version 4'
 always_allow_html: true
-editor_options: 
+editor_options:
   chunk_output_type: console
-  markdown: 
+  markdown:
     wrap: sentence
 ---
 

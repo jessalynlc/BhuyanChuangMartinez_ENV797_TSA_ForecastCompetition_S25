@@ -111,7 +111,7 @@ n_obs <- length(ts_load_daily)
 #Get cutoff point for train/test
 cut_point <- n_obs - n_for
 
-# TRAIN SET (chatGPT said to use window instead to make the proper multivariate time series slices!)
+# TRAIN SET 
 ts_load_train <- window(ts_load_daily, end = time(ts_load_daily)[cut_point])
 
 # TEST SET
