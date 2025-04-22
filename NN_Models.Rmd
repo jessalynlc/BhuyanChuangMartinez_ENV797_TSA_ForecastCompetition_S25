@@ -1,5 +1,5 @@
 ---
-title: "Kaggle: Model version 4"
+title: "NN Networks"
 always_allow_html: true
 editor_options: 
   chunk_output_type: console
@@ -168,117 +168,17 @@ autoplot(ts_daily_train) + ggtitle("Training Set: Daily Demand (2005-2009)")
 autoplot(ts_daily_test) + ggtitle("Test Set: Daily Demand (Jan-Feb 2010)")
 ```
 
-### Testing Model 1: STL + ETS
+### Neural Network 22
 ```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+NN_fit <- nnetar(ts_daily_train,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_daily_train, K=c(2,12)))
 
-# Setting Forecasting horizon: number of days in the test set
-horizon <- length(ts_daily_test)
-
-# Fit and forecast using STL decomposition combined with ETS on the training data
-electricity_fit <- stlf(ts_daily_train, 
-                         h = horizon, 
-                         method = "ets", 
-                         s.window = "periodic", 
-                         robust = TRUE)
-
-# Plot the forecast for the test period
-autoplot(electricity_fit) + 
-  ggtitle("Model 1: STL + ETS Forecast (Test Set)") +
-  ylab("Electricity Demand January-February 2010")
-
-# Overlaying the forecast on the full series 
-autoplot(ts_electricity_daily) +
-  autolayer(electricity_fit, series = "STL + ETS", PI = FALSE) +
-  ggtitle("Model 1: STL + ETS Forecast vs. Observed") +
-  ylab("Electricity Demand January-February 2010")
-
-accuracy_stl_ets <- accuracy(electricity_fit, ts_daily_test)
-accuracy_stl_ets
-
-```
-### Testing Model 2: ARIMA + Fourier
-```{r ARIMA, echo=TRUE, message=FALSE, warning=FALSE}
-#Fitting arima model with fourier terms as exogenous regressors
-# seasonal = FALSE is the same as P=D=Q=0
-# play with K by changing it to K=c(2,2), K=c(2,4), K=c(2,6), etc. The higher the K the longer it will take to converge, because R will try more models.
-
-# Generating Fourier terms for the training set
-fourier_terms_train <- fourier(ts_daily_train, K = c(2, 6))
-
-# Fitting an ARIMA model with these Fourier terms as exogenous regressors
-ARIMA_Four_fit <- auto.arima(ts_daily_train, 
-                             xreg = fourier_terms_train, 
-                             seasonal = FALSE, 
-                             lambda = 0)
-
-# Generating Fourier terms for the forecasting period
-fourier_terms_test <- fourier(ts_daily_train, K = c(2, 6), h = horizon)
-
-# Forecasting using the fitted ARIMA model
-ARIMA_Four_for <- forecast(ARIMA_Four_fit, 
-                           xreg = fourier_terms_test, 
-                           h = horizon)
-
-# Plotting the forecast for the test period
-autoplot(ARIMA_Four_for) + 
-  ggtitle("Model 2: ARIMA + Fourier Forecast (Test Set)") +
-  ylab("Electricity Demand January-February 2010")
-
-# Overlaying on the full series
-autoplot(ts_electricity_daily) +
-  autolayer(ARIMA_Four_for, series = "ARIMA + Fourier", PI = FALSE) +
-  ggtitle("Model 2: ARIMA + Fourier Forecast vs. Observed") +
-  ylab("Electricity Demand January-February 2010")
-
-# Accuracy Test
-accuracy_arima_four <- accuracy(ARIMA_Four_for, ts_daily_test)
-accuracy_arima_four
-
-```
-### Testing Model 3:  TBATS
-```{r TBATS, echo=TRUE, message=FALSE, warning=FALSE}
-# Fitting a TBATS model on the training data
-fit_tbats <- tbats(ts_daily_train)
-
-# Forecasting for the test period using the TBATS model
-forecast_tbats <- forecast(fit_tbats, h = horizon)
-
-# Plotting the TBATS forecast for the test period
-autoplot(forecast_tbats) + 
-  ggtitle("Model 3: TBATS Forecast (Test Set)") +
-  ylab("Electricity Demand January-February 2010")
-
-# Creating the data frame combining the dates and the forecasted values
-forecast_dates <- seq(from = as.Date("2010-01-01"), by = "day", length.out = horizon)
-forecast_TBATS_train <- data.frame(
-  date = forecast_dates,
-  forecast_demand_train = forecast_tbats$mean
-)
-
-# Accuracy Test
-accuracy_tbats <- accuracy(forecast_tbats, ts_daily_test)
-accuracy_tbats
-```
-
-## Model Comparison:
-```{r}
-## Model Comparison for 3 Models
-
-# I used the accuracy metrics from my validation (test) set forecasts
-comparison <- data.frame(
-  Model = c("STL+ETS", "ARIMA+Fourier", "TBATS"),
-  MSE = c(accuracy_stl_ets[1, "RMSE"]^2,
-          accuracy_arima_four[1, "RMSE"]^2,
-          accuracy_tbats[1, "RMSE"]^2),
-  MAE = c(accuracy_stl_ets[1, "MAE"],
-          accuracy_arima_four[1, "MAE"],
-          accuracy_tbats[1, "MAE"]),
-  MAPE = c(accuracy_stl_ets[1, "MAPE"],
-           accuracy_arima_four[1, "MAPE"],
-           accuracy_tbats[1, "MAPE"])
-)
-kable(comparison, caption = "Model Comparison on Validation Data")
-
+#Plot model + observed data
+autoplot(ts_daily_train) +
+   autolayer(NN_for, series="Neural Network",PI=FALSE) +
+   ylab("Load") 
 ```
 
 ## Final forecast for all models
@@ -286,61 +186,9 @@ kable(comparison, caption = "Model Comparison on Validation Data")
 # submission forecast horizon: 59 days (from Jan 1, 2011 to Feb 28, 2011)
 horizon_final <- 59
 
-# I create the full time series object from my merged daily dataset (full_daily).
-# This msts object captures both weekly (7-day) and annual (365.25-day) seasonal patterns.
-full_ts <- msts(full_daily$daily_avg_load, 
-                seasonal.periods = c(7, 365.25), 
-                start = decimal_date(as.Date("2005-01-01")))
 
-### Final Forecast using STL + ETS
-# I re-fit the STL + ETS model on the full time series and forecast for the submission period.
-final_forecast_stl <- stlf(full_ts, 
-                           h = horizon_final, 
-                           method = "ets", 
-                           s.window = "periodic", 
-                           robust = TRUE)
-
-# Plot
-autoplot(final_forecast_stl) + 
-  ggtitle("Model 1: STL_ETS (Full Set)") +
-  ylab("Electricity Demand")
-
-# I create a data frame for the STL+ETS forecast using the provided template.
-final_forecast_stl_df <- data.frame(
-  date = seq(as.Date("2011-01-01"), by = "day", length.out = horizon_final),
-  Model = "STL+ETS",
-  forecast = as.numeric(final_forecast_stl$mean)
-)
-
-### Final Forecast using ARIMA + Fourier Terms
-# I generate Fourier terms on the full time series
-
-fourier_terms_full <- fourier(full_ts, K = c(2, 6))
-# ARIMA model on the full time series using these Fourier terms as exogenous regressors.
-fit_arima_four_full <- auto.arima(full_ts, xreg = fourier_terms_full, seasonal = FALSE, lambda = 0)
-# Fourier terms for the submission period forecast.
-fourier_terms_sub <- fourier(full_ts, K = c(2, 6), h = horizon_final)
-# Forecasting using the fitted ARIMA model.
-final_forecast_arima <- forecast(fit_arima_four_full, xreg = fourier_terms_sub, h = horizon_final)
-# creating a data frame for the ARIMA+Fourier forecast.
-final_forecast_arima_df <- data.frame(
-  date = seq(as.Date("2011-01-01"), by = "day", length.out = horizon_final),
-  Model = "ARIMA+Fourier",
-  forecast = as.numeric(final_forecast_arima$mean)
-)
-
-### Final Forecast using TBATS
-# TBATS model on the full time series.
-fit_tbats_full <- tbats(full_ts)
-# forecast for the submission period using the TBATS model.
-final_forecast_tbats <- forecast(fit_tbats_full, h = horizon_final)
-# data frame for the TBATS forecast.
-final_forecast_tbats_df <- data.frame(
-  date = seq(as.Date("2011-01-01"), by = "day", length.out = horizon_final),
-  Model = "TBATS",
-  forecast = as.numeric(final_forecast_tbats$mean)
-)
 ```
+
 ### Saving the forecast
 ```{r}
 
@@ -352,8 +200,6 @@ final_forecast_stl_df <- final_forecast_stl_df %>%
   select(date, load)
 
 write.csv(final_forecast_stl_df, file = "submission_forecast_stl.csv", row.names = FALSE)
-
-
 
 # ARIMA forecast according to template
 final_forecast_arima_df <- final_forecast_arima_df %>% 
@@ -369,5 +215,3 @@ final_forecast_tbats_df <- final_forecast_tbats_df %>%
 
 write.csv(final_forecast_tbats_df, file = "submission_forecast_tbats.csv", row.names = FALSE)
 ```
-
-
