@@ -25,7 +25,7 @@ library(kableExtra)
 library(readxl)
 library(xts)
 ```
-##Data Import and Primary Cleaning
+#Data Import and Primary Cleaning
 ```{r}
 #Importing time series data (relative humidity and temperature optional but importing)
 
@@ -168,50 +168,52 @@ autoplot(ts_daily_train) + ggtitle("Training Set: Daily Demand (2005-2009)")
 autoplot(ts_daily_test) + ggtitle("Test Set: Daily Demand (Jan-Feb 2010)")
 ```
 
-### Neural Network 22
+#Neural Network Models
+
+##p = 2, P = 2, K = c(2,12)
 ```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+horizon <- length(ts_daily_test)
+
 NN_fit <- nnetar(ts_daily_train,
                   p=2,
                   P=2,
                   xreg=fourier(ts_daily_train, K=c(2,12)))
 
+NN_for <- forecast(NN_fit, h=horizon,xreg=fourier(ts_daily_train, 
+                                           K=c(2,12),h = horizon))
+
 #Plot model + observed data
 autoplot(ts_daily_train) +
    autolayer(NN_for, series="Neural Network",PI=FALSE) +
    ylab("Load") 
+
+accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
+accuracy_NN_for
 ```
 
-## Final forecast for all models
+## Final forecast for all NN models
 ```{r}
 # submission forecast horizon: 59 days (from Jan 1, 2011 to Feb 28, 2011)
 horizon_final <- 59
 
-
+NN_fit_22_final <- nnetar(ts_electricity_daily,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_electricity_daily, K=c(2,12)))
+NN_for_22_final <- forecast(NN_fit_22_final, h=horizon_final,xreg=fourier(ts_daily_train, 
+                                           K=c(2,12),h = horizon_final))
 ```
 
-### Saving the forecast
+## Saving the forecasts
 ```{r}
 
 template <- read_excel("./Data/load.xlsx")
 
-# STL forecast according to template
-final_forecast_stl_df <- final_forecast_stl_df %>% 
-  rename(load = forecast) %>%  
-  select(date, load)
+# NN forecast according to template
+final_forecast_NN_df <- data.frame(
+   date = time(NN_for_22_final$mean),
+   load = as.numeric(NN_for_22_final$mean))
 
-write.csv(final_forecast_stl_df, file = "submission_forecast_stl.csv", row.names = FALSE)
+write.csv(final_forecast_stl_df, file = "submission_forecast_NN.csv", row.names = FALSE)
 
-# ARIMA forecast according to template
-final_forecast_arima_df <- final_forecast_arima_df %>% 
-  rename(load = forecast) %>%  
-  select(date, load)
-
-write.csv(final_forecast_arima_df, file = "submission_forecast_arima.csv", row.names = FALSE)
-
-# TBATS forecast
-final_forecast_tbats_df <- final_forecast_tbats_df %>% 
-  rename(load = forecast) %>%  
-  select(date, load)
-
-write.csv(final_forecast_tbats_df, file = "submission_forecast_tbats.csv", row.names = FALSE)
 ```
