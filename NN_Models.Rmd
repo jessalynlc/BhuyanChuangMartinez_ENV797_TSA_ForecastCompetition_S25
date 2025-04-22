@@ -25,6 +25,7 @@ library(kableExtra)
 library(readxl)
 library(xts)
 ```
+
 #Data Import and Primary Cleaning
 ```{r}
 #Importing time series data (relative humidity and temperature optional but importing)
@@ -191,7 +192,112 @@ accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
 accuracy_NN_for
 ```
 
-## Final forecast for all NN models
+               ME         RMSE       MAE        MPE      MAPE      MASE     ACF1 Theil's U
+Training set  -0.8713464  154.466  111.3658 -0.4865963  3.371852 0.1447422 -0.1308867        NA
+Test set     641.3090394 1942.737 1600.4780  5.1390523 31.937919 2.0801424  0.8493126  2.370443
+
+##p = 6, P = 3, K = c(2,12)
+Increasing the number of past lags and seasonal lags to increase the amount of past information.
+```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+horizon <- length(ts_daily_test)
+
+NN_fit <- nnetar(ts_daily_train,
+                  p=6,
+                  P=3,
+                  xreg=fourier(ts_daily_train, K=c(2,12)))
+
+NN_for <- forecast(NN_fit, h=horizon,xreg=fourier(ts_daily_train, 
+                                           K=c(2,12),h = horizon))
+
+#Plot model + observed data
+autoplot(ts_daily_train) +
+   autolayer(NN_for, series="Neural Network",PI=FALSE) +
+   ylab("Load") 
+
+accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
+accuracy_NN_for
+```
+The error on the test set seems to have gone up, so probably will not be using this model.
+
+                      ME       RMSE        MAE         MPE     MAPE       MASE       ACF1 Theil's U
+Training set   0.1183327   31.69454   22.30719 -0.06463893  0.71525 0.02899267 -0.2279991        NA
+Test set     928.1271916 2137.16583 1837.29319 10.94731840 36.38336 2.38793125  0.8417433  2.593319
+
+##p = 2, P = 2, K = c(3,15)
+For the first seasonality, using 5 harmonics. For the second seasonality, using 15 harmonics.
+
+```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+NN_fit <- nnetar(ts_daily_train,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_daily_train, K=c(3, 15)))
+
+NN_for <- forecast(NN_fit, h=horizon,xreg=fourier(ts_daily_train, 
+                                           K=c(3,15),h = horizon))
+
+#Plot model + observed data
+autoplot(ts_daily_train) +
+   autolayer(NN_for, series="Neural Network",PI=FALSE) +
+   ylab("Load") 
+
+accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
+accuracy_NN_for
+```
+The error on the test set went up here, so probably will not stick with this.
+
+                      ME      RMSE        MAE        MPE     MAPE       MASE       ACF1 Theil's U
+Training set  -0.7055144   73.2614   51.20423 -0.1823739  1.59530 0.06655017 -0.1012514        NA
+Test set     789.7083269 2003.7694 1766.25663  8.1477621 35.52517 2.29560498  0.8344838  2.488114
+
+##p = 2, P = 2, K = c(2,13)
+For the first seasonality, using 5 harmonics. For the second seasonality, using 15 harmonics.
+
+```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+NN_fit <- nnetar(ts_daily_train,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_daily_train, K=c(2, 13)))
+
+NN_for <- forecast(NN_fit, h=horizon,xreg=fourier(ts_daily_train, 
+                                           K=c(2,13),h = horizon))
+
+#Plot model + observed data
+autoplot(ts_daily_train) +
+   autolayer(NN_for, series="Neural Network",PI=FALSE) +
+   ylab("Load") 
+
+accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
+accuracy_NN_for
+```
+
+                      ME      RMSE        MAE        MPE      MAPE      MASE       ACF1 Theil's U
+Training set  -0.4984742  118.6062   85.68213 -0.3390185  2.595967 0.1113611 -0.1028054        NA
+Test set     730.8305853 2018.3051 1715.24692  6.7696245 34.261757 2.2293076  0.8349024  2.470025
+
+##p = 2, P = 2, K = c(2,8)
+Trying to improvegeneralization
+
+```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+NN_fit <- nnetar(ts_daily_train,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_daily_train, K=c(2, 8)))
+
+NN_for <- forecast(NN_fit, h=horizon,xreg=fourier(ts_daily_train, 
+                                           K=c(2,8),h = horizon))
+
+#Plot model + observed data
+autoplot(ts_daily_train) +
+   autolayer(NN_for, series="Neural Network",PI=FALSE) +
+   ylab("Load") 
+
+accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
+accuracy_NN_for
+```
+
+Some better error metrics on test set, but not for all, still worth trying to run it.
+
+## Final forecast for best neural networks of interest
 ```{r}
 # submission forecast horizon: 59 days (from Jan 1, 2011 to Feb 28, 2011)
 horizon_final <- 59
@@ -202,6 +308,13 @@ NN_fit_22_final <- nnetar(ts_electricity_daily,
                   xreg=fourier(ts_electricity_daily, K=c(2,12)))
 NN_for_22_final <- forecast(NN_fit_22_final, h=horizon_final,xreg=fourier(ts_daily_train, 
                                            K=c(2,12),h = horizon_final))
+
+NN_fit_28_final <- nnetar(ts_electricity_daily,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_electricity_daily, K=c(2,8)))
+NN_for_28_final <- forecast(NN_fit_28_final, h=horizon_final,xreg=fourier(ts_daily_train, 
+                                           K=c(2,8),h = horizon_final))
 ```
 
 ## Saving the forecasts
@@ -214,6 +327,13 @@ final_forecast_NN_df <- data.frame(
    date = time(NN_for_22_final$mean),
    load = as.numeric(NN_for_22_final$mean))
 
-write.csv(final_forecast_stl_df, file = "submission_forecast_NN.csv", row.names = FALSE)
+write.csv(final_forecast_NN_df, file = "submission_forecast_NN.csv", row.names = FALSE)
+
+# NN forecast according to template
+final_forecast_NN_28_df <- data.frame(
+   date = time(NN_for_28_final$mean),
+   load = as.numeric(NN_for_28_final$mean))
+
+write.csv(final_forecast_NN_28_df, file = "submission_forecast_NN_28.csv", row.names = FALSE)
 
 ```
