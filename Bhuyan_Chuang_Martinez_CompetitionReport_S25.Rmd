@@ -3,3 +3,254 @@ title: "Bhuyan_Chuang_Martinez_CompetitionReport_S25"
 output: html_document
 ---
 
+Github repository: https://github.com/jessalynlc/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	include = FALSE,
+	tidy = FALSE,
+	tidy.opts = list(width.cutoff = 80)
+)
+```
+
+#Data Wrangling
+```{r package, message=FALSE, warning=FALSE, include=FALSE}
+library(lubridate)
+library(ggplot2)
+library(forecast)  
+library(Kendall)
+library(tseries)
+library(outliers)
+library(tidyverse)
+library(smooth)
+library(zoo)
+library(kableExtra)
+library(readxl)
+library(xts)
+```
+
+#Data Import and Primary Cleaning
+```{r Data Wrangling, include=FALSE}
+#Importing time series data (relative humidity and temperature optional but importing)
+
+#load data: this is daily data, with 24 different sensors
+load_data <- read_excel(
+  path = "./Data/load.xlsx",
+  sheet = 1
+)
+
+#There are 6 NA  andd 17 zeros in data. They would have low impact in the overall
+sum(is.na(load_data))
+sum(load_data == 0, na.rm = TRUE)
+
+#relative humidity: hourly data, with 28 different sensors
+#I would estimate a mean 
+relative_humidity_data <- read_excel(
+  path = "./Data/relative_humidity.xlsx",
+  sheet = 1
+)
+
+#There are 0 NA and 30 zeros. They would have low impact
+sum(is.na(relative_humidity_data))
+sum(relative_humidity_data == 0, na.rm = TRUE)
+
+#temperature data: hourly data, with 28 different sensors
+temperature_data <- read_excel(
+  path = "./Data/temperature.xlsx",
+  sheet = 1
+)
+
+#There are 0 NA and one zero. They would have low impact
+sum(is.na(temperature_data))
+sum(temperature_data == 0, na.rm = TRUE)
+
+```
+
+```{r include=FALSE}
+#Processing load data - wrangling to allow the estimation per year, month, day, hour
+load_processed <- load_data %>%
+  pivot_longer(
+    cols = starts_with("h"), 
+    names_to = "hour", 
+    values_to = "electricity_demand"
+  ) %>%
+  mutate(
+    hour = as.integer(sub("h", "", hour)),  # Extract numeric part from "h1", "h2", etc.
+    date = ymd(date),  
+    year = year(date), 
+    month = month(date), 
+    day = day(date)
+  ) %>% 
+  select(date, year, month, day, hour, electricity_demand)
+
+# Processing Humidity Data: wrangling to allow the estimation per year, month, day, hour
+humidity_processed <- relative_humidity_data %>%
+  pivot_longer(
+    cols = starts_with("rh"), 
+    names_to = "hour", 
+    values_to = "relative_humidity"
+  ) %>%
+  mutate(
+    hour = as.integer(gsub("[^0-9]", "", hour)),  # Extract only numeric characters (e.g., "rh_ws15" becomes 15)
+    date = ymd(date),  
+    year = year(date), 
+    month = month(date), 
+    day = day(date)
+  ) %>% 
+  select(date, year, month, day, hour, relative_humidity)
+
+# Processing Temperature Data: wrangling to allow the estimation per year, month, day, hour
+temp_processed <- temperature_data %>%
+  pivot_longer(
+    cols = starts_with("t"), 
+    names_to = "hour", 
+    values_to = "temperature"  # Corrected: use "temperature" instead of "relative_humidity"
+  ) %>%
+  mutate(
+    hour = as.integer(gsub("[^0-9]", "", hour)),  # Extract numeric part
+    date = ymd(date),  
+    year = year(date), 
+    month = month(date), 
+    day = day(date)
+  ) %>% 
+  select(date, year, month, day, hour, temperature)
+```
+
+## Converting to daily by taking averages
+
+```{r include=FALSE}
+# Converting each processed dataset to daily values
+daily_load <- load_processed %>%
+  group_by(date) %>%
+  summarise(daily_avg_load = mean(electricity_demand, na.rm = TRUE)) %>%
+  ungroup()
+
+daily_humidity <- humidity_processed %>%
+  group_by(date) %>%
+  summarise(daily_avg_humidity = mean(relative_humidity, na.rm = TRUE)) %>%
+  ungroup()
+
+daily_temp <- temp_processed %>%
+  group_by(date) %>%
+  summarise(daily_avg_temp = mean(temperature, na.rm = TRUE)) %>%
+  ungroup()
+
+```
+
+## Merging the daily datasets to a full daily dataset 
+
+```{r include=FALSE}
+# Merging the daily datasets into one full dataset by date
+full_daily <- daily_load %>%
+  inner_join(daily_temp, by = "date") %>%
+  inner_join(daily_humidity, by = "date") %>%
+  arrange(date)
+
+# Preview the merged full dataset
+head(full_daily)
+```
+
+##Converting to time series object
+
+```{r message=FALSE, warning=FALSE}
+# Create the daily time series object from the merged full_daily dataset
+# I use msts() to capture both weekly (7-day) and annual (365.25-day) seasonal patterns.
+ts_electricity_daily <- msts(full_daily$daily_avg_load, 
+                              seasonal.periods = c(7, 365.25), 
+                              start = decimal_date(as.Date("2005-01-01")))
+
+# I plot the full daily series to verify it looks as expected.
+autoplot(ts_electricity_daily) + ggtitle("Electricity Demand: Daily")
+
+# Now, I split the time series into training and test sets.
+# The training set is from January 1, 2005, to December 31, 2009.
+# The test set (for validation) covers January 1 to February 28, 2010.
+# I use the window() function to create these subsets.
+
+ts_daily_train <- window(ts_electricity_daily, end = c(2009, 365))
+ts_daily_test  <- window(ts_electricity_daily, start = c(2010, 1), end = c(2010, 59))
+
+# Visualize the training and test sets to confirm the split.
+autoplot(ts_daily_train) + ggtitle("Training Set: Daily Demand (2005-2009)")
+autoplot(ts_daily_test) + ggtitle("Test Set: Daily Demand (Jan-Feb 2010)")
+```
+#Top 5 Models
+
+##Best model - Neural Network 1: p = 2, P = 2, K = c(2,8)
+
+Trying to improve generalization from Neural Network 2 by decreasing number of seasonal harmonics 
+
+```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+NN_fit <- nnetar(ts_daily_train,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_daily_train, K=c(2, 8)))
+
+NN_for <- forecast(NN_fit, h=horizon,xreg=fourier(ts_daily_train, 
+                                           K=c(2,8),h = horizon))
+
+#Plot model + observed data
+autoplot(ts_daily_train) +
+   autolayer(NN_for, series="Neural Network",PI=FALSE) +
+   ylab("Load") 
+
+accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
+accuracy_NN_for
+
+NN_fit_28_final <- nnetar(ts_electricity_daily,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_electricity_daily, K=c(2,8)))
+NN_for_28_final <- forecast(NN_fit_28_final, h=horizon_final,xreg=fourier(ts_daily_train, 
+                                           K=c(2,8),h = horizon_final))
+```
+
+##Neural Network 2: p = 2, P = 2, K = c(2,12)
+```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+horizon <- length(ts_daily_test)
+
+NN_fit <- nnetar(ts_daily_train,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_daily_train, K=c(2,12)))
+
+NN_for <- forecast(NN_fit, h=horizon,xreg=fourier(ts_daily_train, 
+                                           K=c(2,12),h = horizon))
+
+#Plot model + observed data
+autoplot(ts_daily_train) +
+   autolayer(NN_for, series="Neural Network",PI=FALSE) +
+   ylab("Load") 
+
+accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
+accuracy_NN_for
+
+NN_fit_22_final <- nnetar(ts_electricity_daily,
+                  p=2,
+                  P=2,
+                  xreg=fourier(ts_electricity_daily, K=c(2,12)))
+NN_for_22_final <- forecast(NN_fit_22_final, h=horizon_final,xreg=fourier(ts_daily_train, 
+                                           K=c(2,12),h = horizon_final))
+```
+
+##NNAR Fourier 1
+
+## NNAR Fourier 2
+
+## TBATS
+
+```{r TBATS, echo=TRUE, message=FALSE, warning=FALSE}
+# TBATS can take time to fit
+TBATS_fit <- tbats(ts_load_train)
+
+TBATS_for <- forecast(TBATS_fit, h=365)
+
+#Plot foresting results
+autoplot(TBATS_for) +
+  ylab("Load") 
+
+#Plot model + observed data
+autoplot(ts_load_train) +
+  autolayer(TBATS_for, series="TBATS",PI=FALSE)+
+  ylab("Load") 
+```
