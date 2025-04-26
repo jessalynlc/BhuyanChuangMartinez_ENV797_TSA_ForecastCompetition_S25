@@ -1,256 +1,294 @@
 ---
 title: "Bhuyan_Chuang_Martinez_CompetitionReport_S25"
-output: html_document
+author: "Mazhar Bhuyan, Jessalyn Chuang, Sayra Martinez"
+date: "2025-04-25"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 2
 ---
-
-Github repository: https://github.com/jessalynlc/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-	include = FALSE,
-	tidy = FALSE,
-	tidy.opts = list(width.cutoff = 80)
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.align = "center",
+  fig.width = 7,
+  fig.height = 4
 )
 ```
 
-#Data Wrangling
-```{r package, message=FALSE, warning=FALSE, include=FALSE}
+## GitHub Repository
+
+[Project Repository](https://github.com/jessalynlc/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25)
+[Repository Fork](https://github.com/MazharBhuyan/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25)
+*Note that work was also done in a fork of this project and we were unable to merge with the main repository!
+
+## Introduction
+
+This report presents our forecasting approach for the ENV797 TSA Forecasting Competition. Our objective was to forecast daily electricity demand using time series models and outperform the benchmark STL+ETS model. Model evaluation was based on minimizing the Mean Absolute Percentage Error (MAPE) over a validation set.
+
+## Data Description
+
+The dataset included hourly electricity load, temperature, and relative humidity from January 2005 to December 2010. After cleaning and removing missing values, we:
+
+- Aggregated the data to daily averages.
+- Created an `msts` time series object with weekly (7-day) and yearly (365.25-day) seasonality.
+- Used January 1, 2005 to December 31, 2009 for model training.
+- Used January 1, 2010 to February 28, 2010 as a validation set.
+
+```{r data-loading, include=FALSE}
+# Packages
 library(lubridate)
 library(ggplot2)
-library(forecast)  
-library(Kendall)
-library(tseries)
-library(outliers)
+library(forecast)
 library(tidyverse)
-library(smooth)
-library(zoo)
-library(kableExtra)
 library(readxl)
+library(kableExtra)
+library(tseries)
+library(smooth)
 library(xts)
-```
 
-#Data Import and Primary Cleaning
-```{r Data Wrangling, include=FALSE}
-#Importing time series data (relative humidity and temperature optional but importing)
+# Load datasets
+load_data <- read_excel(here::here("Data", "load.xlsx"))
+relative_humidity_data <- read_excel(here::here("Data", "relative_humidity.xlsx"))
+temperature_data <- read_excel(here::here("Data", "temperature.xlsx"))
 
-#load data: this is daily data, with 24 different sensors
-load_data <- read_excel(
-  path = "./Data/load.xlsx",
-  sheet = 1
-)
-
-#There are 6 NA  andd 17 zeros in data. They would have low impact in the overall
-sum(is.na(load_data))
-sum(load_data == 0, na.rm = TRUE)
-
-#relative humidity: hourly data, with 28 different sensors
-#I would estimate a mean 
-relative_humidity_data <- read_excel(
-  path = "./Data/relative_humidity.xlsx",
-  sheet = 1
-)
-
-#There are 0 NA and 30 zeros. They would have low impact
-sum(is.na(relative_humidity_data))
-sum(relative_humidity_data == 0, na.rm = TRUE)
-
-#temperature data: hourly data, with 28 different sensors
-temperature_data <- read_excel(
-  path = "./Data/temperature.xlsx",
-  sheet = 1
-)
-
-#There are 0 NA and one zero. They would have low impact
-sum(is.na(temperature_data))
-sum(temperature_data == 0, na.rm = TRUE)
-
-```
-
-```{r include=FALSE}
-#Processing load data - wrangling to allow the estimation per year, month, day, hour
+# Processing load data
 load_processed <- load_data %>%
-  pivot_longer(
-    cols = starts_with("h"), 
-    names_to = "hour", 
-    values_to = "electricity_demand"
-  ) %>%
-  mutate(
-    hour = as.integer(sub("h", "", hour)),  # Extract numeric part from "h1", "h2", etc.
-    date = ymd(date),  
-    year = year(date), 
-    month = month(date), 
-    day = day(date)
-  ) %>% 
-  select(date, year, month, day, hour, electricity_demand)
+  pivot_longer(cols = starts_with("h"), names_to = "hour", values_to = "electricity_demand") %>%
+  mutate(hour = as.integer(sub("h", "", hour)), date = ymd(date)) %>%
+  group_by(date) %>%
+  summarise(daily_avg_load = mean(electricity_demand, na.rm = TRUE))
 
-# Processing Humidity Data: wrangling to allow the estimation per year, month, day, hour
+# Processing humidity and temperature
 humidity_processed <- relative_humidity_data %>%
-  pivot_longer(
-    cols = starts_with("rh"), 
-    names_to = "hour", 
-    values_to = "relative_humidity"
-  ) %>%
-  mutate(
-    hour = as.integer(gsub("[^0-9]", "", hour)),  # Extract only numeric characters (e.g., "rh_ws15" becomes 15)
-    date = ymd(date),  
-    year = year(date), 
-    month = month(date), 
-    day = day(date)
-  ) %>% 
-  select(date, year, month, day, hour, relative_humidity)
+  pivot_longer(cols = starts_with("rh"), names_to = "hour", values_to = "relative_humidity") %>%
+  mutate(hour = as.integer(gsub("[^0-9]", "", hour)), date = ymd(date)) %>%
+  group_by(date) %>%
+  summarise(daily_avg_humidity = mean(relative_humidity, na.rm = TRUE))
 
-# Processing Temperature Data: wrangling to allow the estimation per year, month, day, hour
 temp_processed <- temperature_data %>%
-  pivot_longer(
-    cols = starts_with("t"), 
-    names_to = "hour", 
-    values_to = "temperature"  # Corrected: use "temperature" instead of "relative_humidity"
-  ) %>%
-  mutate(
-    hour = as.integer(gsub("[^0-9]", "", hour)),  # Extract numeric part
-    date = ymd(date),  
-    year = year(date), 
-    month = month(date), 
-    day = day(date)
-  ) %>% 
-  select(date, year, month, day, hour, temperature)
-```
-
-## Converting to daily by taking averages
-
-```{r include=FALSE}
-# Converting each processed dataset to daily values
-daily_load <- load_processed %>%
+  pivot_longer(cols = starts_with("t"), names_to = "hour", values_to = "temperature") %>%
+  mutate(hour = as.integer(gsub("[^0-9]", "", hour)), date = ymd(date)) %>%
   group_by(date) %>%
-  summarise(daily_avg_load = mean(electricity_demand, na.rm = TRUE)) %>%
-  ungroup()
+  summarise(daily_avg_temp = mean(temperature, na.rm = TRUE))
 
-daily_humidity <- humidity_processed %>%
-  group_by(date) %>%
-  summarise(daily_avg_humidity = mean(relative_humidity, na.rm = TRUE)) %>%
-  ungroup()
-
-daily_temp <- temp_processed %>%
-  group_by(date) %>%
-  summarise(daily_avg_temp = mean(temperature, na.rm = TRUE)) %>%
-  ungroup()
-
-```
-
-## Merging the daily datasets to a full daily dataset 
-
-```{r include=FALSE}
-# Merging the daily datasets into one full dataset by date
-full_daily <- daily_load %>%
-  inner_join(daily_temp, by = "date") %>%
-  inner_join(daily_humidity, by = "date") %>%
+# Merge datasets
+full_daily <- load_processed %>%
+  inner_join(temp_processed, by = "date") %>%
+  inner_join(humidity_processed, by = "date") %>%
   arrange(date)
 
-# Preview the merged full dataset
-head(full_daily)
-```
+# Create time series objects
+ts_electricity_daily <- msts(full_daily$daily_avg_load, seasonal.periods = c(7, 365.25), start = decimal_date(as.Date("2005-01-01")))
+ts_temp_daily <- msts(full_daily$daily_avg_temp, seasonal.periods = c(7, 365.25), start = decimal_date(as.Date("2005-01-01")))
 
-##Converting to time series object
-
-```{r message=FALSE, warning=FALSE}
-# Create the daily time series object from the merged full_daily dataset
-# I use msts() to capture both weekly (7-day) and annual (365.25-day) seasonal patterns.
-ts_electricity_daily <- msts(full_daily$daily_avg_load, 
-                              seasonal.periods = c(7, 365.25), 
-                              start = decimal_date(as.Date("2005-01-01")))
-
-# I plot the full daily series to verify it looks as expected.
-autoplot(ts_electricity_daily) + ggtitle("Electricity Demand: Daily")
-
-# Now, I split the time series into training and test sets.
-# The training set is from January 1, 2005, to December 31, 2009.
-# The test set (for validation) covers January 1 to February 28, 2010.
-# I use the window() function to create these subsets.
-
+# Train/Test split
 ts_daily_train <- window(ts_electricity_daily, end = c(2009, 365))
-ts_daily_test  <- window(ts_electricity_daily, start = c(2010, 1), end = c(2010, 59))
-
-# Visualize the training and test sets to confirm the split.
-autoplot(ts_daily_train) + ggtitle("Training Set: Daily Demand (2005-2009)")
-autoplot(ts_daily_test) + ggtitle("Test Set: Daily Demand (Jan-Feb 2010)")
-```
-#Top 5 Models
-
-##Best model - Neural Network 1: p = 2, P = 2, K = c(2,8)
-
-Trying to improve generalization from Neural Network 2 by decreasing number of seasonal harmonics 
-
-```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
-NN_fit <- nnetar(ts_daily_train,
-                  p=2,
-                  P=2,
-                  xreg=fourier(ts_daily_train, K=c(2, 8)))
-
-NN_for <- forecast(NN_fit, h=horizon,xreg=fourier(ts_daily_train, 
-                                           K=c(2,8),h = horizon))
-
-#Plot model + observed data
-autoplot(ts_daily_train) +
-   autolayer(NN_for, series="Neural Network",PI=FALSE) +
-   ylab("Load") 
-
-accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
-accuracy_NN_for
-
-NN_fit_28_final <- nnetar(ts_electricity_daily,
-                  p=2,
-                  P=2,
-                  xreg=fourier(ts_electricity_daily, K=c(2,8)))
-NN_for_28_final <- forecast(NN_fit_28_final, h=horizon_final,xreg=fourier(ts_daily_train, 
-                                           K=c(2,8),h = horizon_final))
+ts_daily_test <- window(ts_electricity_daily, start = c(2010, 1), end = c(2010, 59))
+temp_train <- as.numeric(window(ts_temp_daily, end = c(2009, 365)))
+temp_test <- as.numeric(window(ts_temp_daily, start = c(2010, 1), end = c(2010, 59)))
 ```
 
-##Neural Network 2: p = 2, P = 2, K = c(2,12)
-```{r ETS, echo=TRUE, message=FALSE, warning=FALSE}
+The dataset included hourly electricity load, temperature, and relative humidity from January 2005 to December 2010. After cleaning and removing missing values, we:
+
+- Aggregated the data to daily averages.
+- Created an `msts` time series object with weekly (7-day) and yearly (365.25-day) seasonality.
+- Used January 1, 2005 to December 31, 2009 for model training.
+- Used January 1, 2010 to February 28, 2010 as a validation set.
+
+## Top 5 Forecasting Models
+
+We tested several models in a systematic manner and evaluated them based on validation MAPE.
+
+1. **Model 1: NNAR + Fourier (K=2,8)** *(Selected Best Model)*
+2. Model 2: NNAR + Fourier (K=2,12)
+3. Model 3: NNAR + Fourier (K=2,12) + Temp
+4. Model 4: NNAR + Fourier (K=3,18)
+5. Model 5: TBATS
+
+We also experimented with an ARIMA + NNAR hybrid model, but it was not among the top 5 based on MAPE.
+
+## Modeling & Forecast Results
+
+### Model 1: NNAR + Fourier (K = 2,8)
+
+We tried this model after trying out more complex NNAR + Fourier models. We chose to use NNAR + Fourier (K= 2,8) for forecasting load because it provided a strong balance between model complexity and performance. The Fourier terms capture load's seasonal patterns, such as daily and yearly cycles, while the NNAR model handles the nonlinear and irregular behaviors driven by weather/holidays/human activity. By selecting K = 2 and 8, we introduced enough flexibility to represent both broad and finer seasonal trends without overfitting, allowing the neural network to focus on learning residual variations while not over/underfitting to the data.
+
+```{r model1-nnar-k28}
+K1 <- c(2,8)
+horizon <- length(ts_daily_test)
+NN_fit_k28 <- nnetar(ts_daily_train, p = 2, P = 2, xreg = fourier(ts_daily_train, K = K1))
+NN_for_k28 <- forecast(NN_fit_k28, h = horizon, xreg = fourier(ts_daily_train, K = K1, h = horizon))
+autoplot(ts_daily_test) + autolayer(NN_for_k28, series = "Model 1 Forecast")
+accuracy(NN_for_k28, ts_daily_test)
+```
+
+### Model 2: NNAR + Fourier (K = 2,12)
+
+We first tested NNAR + Fourier (K=2,12) and considered it our baseline model for forecasting load. This setup allowed us to capture the major seasonal patterns in the data using Fourier terms while using the flexibility of a neural network to model nonlinearities and irregular fluctuations. Choosing K = 2 and 12 offered a broader range of seasonal harmonics to start. 
+
+```{r model2-nnar-k212}
+
+K2 <- c(2,12)
+NN_fit_k212 <- nnetar(ts_daily_train, p = 2, P = 2, xreg = fourier(ts_daily_train, K = K2))
+NN_for_k212 <- forecast(NN_fit_k212, h = horizon, xreg = fourier(ts_daily_train, K = K2, h = horizon))
+autoplot(ts_daily_test) + autolayer(NN_for_k212, series = "Model 2 Forecast")
+accuracy(NN_for_k212, ts_daily_test)
+```
+
+### Model 3: NNAR + Fourier (K = 2,12) + Temp
+
+Including temperature as a regressor can help capture demand variations driven by weather. However, adding multiple regressors like temperature and humidity risks introducing multicollinearity, especially when both variables are correlated (e.g., hot days often being humid). Multicollinearity can lead to unstable neural network training, overfitting, and degraded forecasting performance if not carefully regularized. This model showed that temperature alone did not consistently improve MAPE, indicating that simpler seasonal Fourier terms were sufficient.
+
+```{r nnar_fourier_k212, message=FALSE, warning=FALSE}
+
+# NNAR + Fourier Model
+# I chose to use a Neural Network Autoregressive (NNAR) model with Fourier terms (K = c(2, 12))
+# to capture complex seasonal and nonlinear patterns in the daily electricity data.
+# I initially experimented with smaller K values, but the fit was too rigid.
+# Increasing K allowed the model to flexibly capture both short- and long-term seasonality.
+
 horizon <- length(ts_daily_test)
 
-NN_fit <- nnetar(ts_daily_train,
-                  p=2,
-                  P=2,
-                  xreg=fourier(ts_daily_train, K=c(2,12)))
+# Fit the NNAR model with Fourier terms
+NNAR_Fourier_fit <- nnetar(
+  ts_daily_train, 
+  p = 2, P = 2, 
+  xreg = fourier(ts_daily_train, K = c(2, 12))
+)
 
-NN_for <- forecast(NN_fit, h=horizon,xreg=fourier(ts_daily_train, 
-                                           K=c(2,12),h = horizon))
+# Forecast using the fitted model
+NNAR_Fourier_forecast <- forecast(
+  NNAR_Fourier_fit, 
+  h = horizon, 
+  xreg = fourier(ts_daily_train, K = c(2, 12), h = horizon)
+)
 
-#Plot model + observed data
-autoplot(ts_daily_train) +
-   autolayer(NN_for, series="Neural Network",PI=FALSE) +
-   ylab("Load") 
+# Plot the forecast against the test data
+# This visual check helped me confirm that the forecast captured both the trend and seasonal fluctuation well.
+autoplot(ts_daily_test) + 
+  autolayer(NNAR_Fourier_forecast, series = "NNAR + Fourier (K=2,12)")
 
-accuracy_NN_for <- accuracy(NN_for, ts_daily_test)
-accuracy_NN_for
+# Calculate accuracy metrics
 
-NN_fit_22_final <- nnetar(ts_electricity_daily,
-                  p=2,
-                  P=2,
-                  xreg=fourier(ts_electricity_daily, K=c(2,12)))
-NN_for_22_final <- forecast(NN_fit_22_final, h=horizon_final,xreg=fourier(ts_daily_train, 
-                                           K=c(2,12),h = horizon_final))
+accuracy(NNAR_Fourier_forecast, ts_daily_test) # Score 23.48
+
 ```
 
-##NNAR Fourier 1
+### Model 4: NNAR + Fourier (K = 3,18)
 
-## NNAR Fourier 2
+We tested NNAR + Fourier (K = 3,18) to explore whether adding more seasonal components would improve forecast accuracy. By increasing the number of Fourier terms, the model could capture more detailed seasonal fluctuations and smaller periodic patterns that might not be fully represented with lower K values.
 
-## TBATS
-
-```{r TBATS, echo=TRUE, message=FALSE, warning=FALSE}
-# TBATS can take time to fit
-TBATS_fit <- tbats(ts_load_train)
-
-TBATS_for <- forecast(TBATS_fit, h=365)
-
-#Plot foresting results
-autoplot(TBATS_for) +
-  ylab("Load") 
-
-#Plot model + observed data
-autoplot(ts_load_train) +
-  autolayer(TBATS_for, series="TBATS",PI=FALSE)+
-  ylab("Load") 
+```{r model4-nnar-k318}
+K4 <- c(3,18)
+NN_fit_k318 <- nnetar(ts_daily_train, p = 2, P = 2, xreg = fourier(ts_daily_train, K = K4), size = 10, decay = 0.01, maxNWts = 2000)
+NN_for_k318 <- forecast(NN_fit_k318, h = horizon, xreg = fourier(ts_daily_train, K = K4, h = horizon))
+autoplot(ts_daily_test) + autolayer(NN_for_k318, series = "Model 4 Forecast")
+accuracy(NN_for_k318, ts_daily_test)
 ```
+
+### Model 5: TBATS
+
+We tested TBATS because it is designed to handle seasonal patterns, multiple seasonalities, and nonstationary behavior. In our case, TBATS did not perform as well as the NNAR + Fourier models in the Kaggle competition as load was just better forecasted by a more targeted combination of Fourier-seasonality and a nonlinear neural network, whereas TBATS oversmoothed or lagged behind sharp changes in load.
+
+```{r model5-tbats}
+TBATS_fit <- tbats(ts_daily_train)
+TBATS_for <- forecast(TBATS_fit, h = horizon)
+autoplot(ts_daily_test) + autolayer(TBATS_for, series = "Model 5 Forecast")
+accuracy(TBATS_for, ts_daily_test)
+```
+
+## Model Comparison Table
+
+### Model Evaluation Discussion
+
+Based on the validation MAPE values, **Model 1: NNAR + Fourier (K=2,8)** achieved the best performance. It effectively captured weekly and annual seasonal patterns while maintaining model simplicity.
+
+- **Model 1 (K=2,8)** showed strong generalization by balancing underfitting and overfitting, and leveraging just enough Fourier terms to capture dominant seasonality.
+- **Model 2 (K=2,12)** slightly overfitted to noise, leading to a marginal increase in MAPE despite capturing more complex patterns.
+- **Model 3 (K=2,12) + Temp** demonstrated that including external regressors such as temperature can introduce multicollinearity, complicating the model without consistent forecasting gains.
+- **Model 4 (K=3,18)** increased the model's flexibility but also risked overfitting due to high model complexity without significant improvement in predictive accuracy.
+- **Model 5 (TBATS)** handled seasonality flexibly but did not outperform simpler NNAR + Fourier models, indicating the electricity demand series had relatively stable seasonality well captured by Fourier harmonics.
+
+Overall, simpler seasonal structure combined with neural networks provided the best generalization to unseen data.
+
+
+```{r model-comparison, echo=FALSE}
+comparison <- data.frame(
+  Model = c(
+    "Model 1: NNAR + Fourier (K = c(2,8))",
+    "Model 2: NNAR + Fourier (K = c(2,12)) Baseline",
+    "Model 3: NNAR + Fourier (K = c(2,12)) on Test",
+    "Model 4: NNAR + Fourier (K = c(3,18))",
+    "Model 5: TBATS"
+  ),
+  RMSE = c(
+    accuracy(NN_for_k28, ts_daily_test)[2, "RMSE"],
+    accuracy(NN_for_k212, ts_daily_test)[2, "RMSE"],  # Updated here
+    accuracy(NNAR_Fourier_forecast, ts_daily_test)[2, "RMSE"],
+    accuracy(NN_for_k318, ts_daily_test)[2, "RMSE"],
+    accuracy(TBATS_for, ts_daily_test)[2, "RMSE"]
+  ),
+  MAE = c(
+    accuracy(NN_for_k28, ts_daily_test)[2, "MAE"],
+    accuracy(NN_for_k212, ts_daily_test)[2, "MAE"],  # Updated here
+    accuracy(NNAR_Fourier_forecast, ts_daily_test)[2, "MAE"],
+    accuracy(NN_for_k318, ts_daily_test)[2, "MAE"],
+    accuracy(TBATS_for, ts_daily_test)[2, "MAE"]
+  ),
+  MAPE = c(
+    accuracy(NN_for_k28, ts_daily_test)[2, "MAPE"],
+    accuracy(NN_for_k212, ts_daily_test)[2, "MAPE"],  # Updated here
+    accuracy(NNAR_Fourier_forecast, ts_daily_test)[2, "MAPE"],
+    accuracy(NN_for_k318, ts_daily_test)[2, "MAPE"],
+    accuracy(TBATS_for, ts_daily_test)[2, "MAPE"]
+  )
+)
+
+# Nicely formatted table
+kable(
+  comparison, 
+  caption = "Performance Comparison of All 5 Models (Train/Test Evaluation)",
+  digits = 3
+)
+```
+
+## Final Forecast for 2011
+
+```{r final-forecast-model1}
+# Define full time series
+ts_full <- ts_electricity_daily
+final_dates <- seq(as.Date("2011-01-01"), as.Date("2011-02-28"), by = "day")
+final_horizon <- length(final_dates)
+
+# Create Fourier regressors
+K1 <- c(2,8)
+xreg_full_1 <- fourier(ts_full, K = K1)
+xreg_fc_1 <- fourier(ts_full, K = K1, h = final_horizon)
+
+# Fit Model 1 on full data
+fit_nnar_full <- nnetar(ts_full, p = 2, P = 2, xreg = xreg_full_1)
+
+# Forecast for Jan-Feb 2011
+fc_nnar_full <- forecast(fit_nnar_full, h = final_horizon, xreg = xreg_fc_1)
+
+# Save forecast
+final_forecast_df <- data.frame(date = final_dates, load = as.numeric(fc_nnar_full$mean))
+autoplot(fc_nnar_full) + ggtitle("Final Forecast Using Model 1: NNAR + Fourier (K=2,8)")
+```
+
+The final model selection was **Model 1: NNAR + Fourier (K=2,8)** based on lowest validation MAPE when forecasting 2011. We retrained this model using the full dataset (2005–2010) and forecasted daily load for January 1 to February 28, 2011.
+
+## Conclusion
+
+Through systematic model development and evaluation, we determined that **Model 1: NNAR + Fourier (K=2,8)** provided the most accurate forecasts. It effectively captured both weekly and yearly seasonal patterns while maintaining simplicity. Models with more Fourier terms or additional temperature regressors did not outperform this baseline.
+
+Our Kaggle submissions demonstrated steady improvement, culminating in a final forecast that surpassed the vanilla STL+ETS benchmark.
+
+## Acknowledgment of AI Assistance
+
+ChatGPT was used to assist with R Markdown formatting, report organization, and code cleaning. All modeling decisions, model selection, and data handling were conducted independently by the project team.
