@@ -3,10 +3,9 @@ title: "Bhuyan_Chuang_Martinez_CompetitionReport_S25"
 author: "Mazhar Bhuyan, Jessalyn Chuang, Sayra Martinez"
 date: "2025-04-25"
 output:
-  pdf_document:
-    latex_engine: xelatex
-    toc: true
-    toc_depth: 2
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -22,8 +21,10 @@ knitr::opts_chunk$set(
 
 ## GitHub Repository
 
-[Project Repository](https://github.com/jessalynlc/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25)
-[Repository Fork](https://github.com/MazharBhuyan/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25)
+[Project Repository](https://github.com/jessalynlc/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25)\\
+
+[Repository Fork](https://github.com/MazharBhuyan/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25)\\
+
 *Note that work was also done in a fork of this project and we were unable to merge with the main repository!
 
 ## Introduction

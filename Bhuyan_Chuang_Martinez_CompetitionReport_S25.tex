@@ -137,17 +137,13 @@
 \begin{document}
 \maketitle
 
-{
-\setcounter{tocdepth}{2}
-\tableofcontents
-}
 \subsection{GitHub Repository}\label{github-repository}
 
 \href{https://github.com/jessalynlc/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25}{Project
 Repository}
-\href{https://github.com/MazharBhuyan/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25}{Repository
-Fork} *Note that work was also done in a fork of this project and we
-were unable to merge with the main repository!
+\n[Repository Fork](\url{https://github.com/MazharBhuyan/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25})
+\n*Note that work was also done in a fork of this project and we were
+unable to merge with the main repository!
 
 \subsection{Introduction}\label{introduction}
 
@@ -252,12 +248,12 @@ the data.
 \end{Shaded}
 
 \begin{verbatim}
-##                       ME     RMSE       MAE       MPE      MAPE      MASE
-## Training set  -0.8013252  264.156  193.0176 -0.985471  5.753938 0.2508651
-## Test set     646.8956048 1824.995 1477.1098  5.827339 29.371256 1.9198006
+##                      ME     RMSE      MAE        MPE      MAPE      MASE
+## Training set  -1.175759  263.097  190.050 -0.9871232  5.653911 0.2470082
+## Test set     810.755950 1967.805 1642.677  8.7475449 32.499205 2.1349881
 ##                     ACF1 Theil's U
-## Training set -0.03499438        NA
-## Test set      0.84833491  2.223439
+## Training set -0.03411675        NA
+## Test set      0.85904423  2.385696
 \end{verbatim}
 
 \subsubsection{Model 2: NNAR + Fourier (K =
@@ -288,12 +284,12 @@ harmonics to start.
 \end{Shaded}
 
 \begin{verbatim}
-##                        ME      RMSE      MAE        MPE      MAPE      MASE
-## Training set   0.09365173  149.9667  106.482 -0.4374611  3.205913 0.1383947
-## Test set     684.26635802 1967.6875 1631.578  6.2203166 32.524872 2.1205626
-##                     ACF1 Theil's U
-## Training set -0.09753951        NA
-## Test set      0.84422333  2.379214
+##                       ME      RMSE       MAE        MPE      MAPE      MASE
+## Training set   0.1853845  152.2358  109.0513 -0.4475076  3.298475 0.1417341
+## Test set     775.2930241 2038.3059 1737.2961  7.9584180 34.338455 2.2579650
+##                    ACF1 Theil's U
+## Training set -0.1154700        NA
+## Test set      0.8505419  2.455614
 \end{verbatim}
 
 \subsubsection{Model 3: NNAR + Fourier (K = 2,12) +
@@ -351,12 +347,12 @@ terms were sufficient.
 \end{Shaded}
 
 \begin{verbatim}
-##                      ME      RMSE       MAE       MPE      MAPE      MASE
-## Training set  -1.451812  157.0403  112.8468 -0.526845  3.409342 0.1466671
-## Test set     810.274995 2098.2691 1786.5620  8.165844 35.452445 2.3219958
+##                     ME      RMSE       MAE        MPE      MAPE      MASE
+## Training set  -1.19979  154.2441  112.2034 -0.4953418  3.408601 0.1458308
+## Test set     733.65227 2055.7626 1731.3576  6.7714327 34.432443 2.2502467
 ##                    ACF1 Theil's U
-## Training set -0.1069410        NA
-## Test set      0.8549365  2.543657
+## Training set -0.1041646        NA
+## Test set      0.8504793  2.478301
 \end{verbatim}
 
 \subsubsection{Model 4: NNAR + Fourier (K =
@@ -386,12 +382,12 @@ represented with lower K values.
 \end{Shaded}
 
 \begin{verbatim}
-##                       ME      RMSE      MAE        MPE      MAPE      MASE
-## Training set  -0.6116014  211.0185  148.925 -0.6799629  4.404385 0.1935579
-## Test set     868.5344580 1975.4318 1681.170  9.9637850 33.084252 2.1850175
+##                        ME      RMSE      MAE        MPE      MAPE     MASE
+## Training set  -0.04863108  216.0197  152.232 -0.6791729  4.499708 0.197856
+## Test set     832.16963282 1903.3639 1639.336  9.3756694 32.468027 2.130646
 ##                     ACF1 Theil's U
-## Training set -0.07437868        NA
-## Test set      0.85013678  2.385224
+## Training set -0.06335298        NA
+## Test set      0.84792922  2.306262
 \end{verbatim}
 
 \subsubsection{Model 5: TBATS}\label{model-5-tbats}
@@ -497,12 +493,12 @@ MAPE
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Model 1: NNAR + Fourier (K = c(2,8)) & 1824.995 & 1477.110 & 29.371 \\
-Model 2: NNAR + Fourier (K = c(2,12)) Baseline & 1967.688 & 1631.578 &
-32.525 \\
-Model 3: NNAR + Fourier (K = c(2,12)) on Test & 2098.269 & 1786.562 &
-35.452 \\
-Model 4: NNAR + Fourier (K = c(3,18)) & 1975.432 & 1681.170 & 33.084 \\
+Model 1: NNAR + Fourier (K = c(2,8)) & 1967.805 & 1642.677 & 32.499 \\
+Model 2: NNAR + Fourier (K = c(2,12)) Baseline & 2038.306 & 1737.296 &
+34.338 \\
+Model 3: NNAR + Fourier (K = c(2,12)) on Test & 2055.763 & 1731.358 &
+34.432 \\
+Model 4: NNAR + Fourier (K = c(3,18)) & 1903.364 & 1639.336 & 32.468 \\
 Model 5: TBATS & 1376.098 & 1083.375 & 20.452 \\
 \end{longtable}
 
