@@ -1,0 +1,561 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Bhuyan\_Chuang\_Martinez\_CompetitionReport\_S25},
+  pdfauthor={Mazhar Bhuyan, Jessalyn Chuang, Sayra Martinez},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Bhuyan\_Chuang\_Martinez\_CompetitionReport\_S25}
+\author{Mazhar Bhuyan, Jessalyn Chuang, Sayra Martinez}
+\date{2025-04-25}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\subsection{GitHub Repository}\label{github-repository}
+
+\href{https://github.com/jessalynlc/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25}{Project
+Repository}
+\href{https://github.com/MazharBhuyan/BhuyanChuangMartinez_ENV797_TSA_ForecastCompetition_S25}{Repository
+Fork} *Note that work was also done in a fork of this project and we
+were unable to merge with the main repository!
+
+\subsection{Introduction}\label{introduction}
+
+This report presents our forecasting approach for the ENV797 TSA
+Forecasting Competition. Our objective was to forecast daily electricity
+demand using time series models and outperform the benchmark STL+ETS
+model. Model evaluation was based on minimizing the Mean Absolute
+Percentage Error (MAPE) over a validation set.
+
+\subsection{Data Description}\label{data-description}
+
+The dataset included hourly electricity load, temperature, and relative
+humidity from January 2005 to December 2010. After cleaning and removing
+missing values, we:
+
+\begin{itemize}
+\tightlist
+\item
+  Aggregated the data to daily averages.
+\item
+  Created an \texttt{msts} time series object with weekly (7-day) and
+  yearly (365.25-day) seasonality.
+\item
+  Used January 1, 2005 to December 31, 2009 for model training.
+\item
+  Used January 1, 2010 to February 28, 2010 as a validation set.
+\end{itemize}
+
+The dataset included hourly electricity load, temperature, and relative
+humidity from January 2005 to December 2010. After cleaning and removing
+missing values, we:
+
+\begin{itemize}
+\tightlist
+\item
+  Aggregated the data to daily averages.
+\item
+  Created an \texttt{msts} time series object with weekly (7-day) and
+  yearly (365.25-day) seasonality.
+\item
+  Used January 1, 2005 to December 31, 2009 for model training.
+\item
+  Used January 1, 2010 to February 28, 2010 as a validation set.
+\end{itemize}
+
+\subsection{Top 5 Forecasting Models}\label{top-5-forecasting-models}
+
+We tested several models in a systematic manner and evaluated them based
+on validation MAPE.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Model 1: NNAR + Fourier (K=2,8)} \emph{(Selected Best Model)}
+\item
+  Model 2: NNAR + Fourier (K=2,12)
+\item
+  Model 3: NNAR + Fourier (K=2,12) + Temp
+\item
+  Model 4: NNAR + Fourier (K=3,18)
+\item
+  Model 5: TBATS
+\end{enumerate}
+
+We also experimented with an ARIMA + NNAR hybrid model, but it was not
+among the top 5 based on MAPE.
+
+\subsection{Modeling \& Forecast
+Results}\label{modeling-forecast-results}
+
+\subsubsection{Model 1: NNAR + Fourier (K =
+2,8)}\label{model-1-nnar-fourier-k-28}
+
+We tried this model after trying out more complex NNAR + Fourier models.
+We chose to use NNAR + Fourier (K= 2,8) for forecasting load because it
+provided a strong balance between model complexity and performance. The
+Fourier terms capture load's seasonal patterns, such as daily and yearly
+cycles, while the NNAR model handles the nonlinear and irregular
+behaviors driven by weather/holidays/human activity. By selecting K = 2
+and 8, we introduced enough flexibility to represent both broad and
+finer seasonal trends without overfitting, allowing the neural network
+to focus on learning residual variations while not over/underfitting to
+the data.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{K1 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{)}
+\NormalTok{horizon }\OtherTok{\textless{}{-}} \FunctionTok{length}\NormalTok{(ts\_daily\_test)}
+\NormalTok{NN\_fit\_k28 }\OtherTok{\textless{}{-}} \FunctionTok{nnetar}\NormalTok{(ts\_daily\_train, }\AttributeTok{p =} \DecValTok{2}\NormalTok{, }\AttributeTok{P =} \DecValTok{2}\NormalTok{, }\AttributeTok{xreg =} \FunctionTok{fourier}\NormalTok{(ts\_daily\_train, }\AttributeTok{K =}\NormalTok{ K1))}
+\NormalTok{NN\_for\_k28 }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(NN\_fit\_k28, }\AttributeTok{h =}\NormalTok{ horizon, }\AttributeTok{xreg =} \FunctionTok{fourier}\NormalTok{(ts\_daily\_train, }\AttributeTok{K =}\NormalTok{ K1, }\AttributeTok{h =}\NormalTok{ horizon))}
+\FunctionTok{autoplot}\NormalTok{(ts\_daily\_test) }\SpecialCharTok{+} \FunctionTok{autolayer}\NormalTok{(NN\_for\_k28, }\AttributeTok{series =} \StringTok{"Model 1 Forecast"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{Bhuyan_Chuang_Martinez_CompetitionReport_S25_files/figure-latex/model1-nnar-k28-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{accuracy}\NormalTok{(NN\_for\_k28, ts\_daily\_test)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                       ME     RMSE       MAE       MPE      MAPE      MASE
+## Training set  -0.8013252  264.156  193.0176 -0.985471  5.753938 0.2508651
+## Test set     646.8956048 1824.995 1477.1098  5.827339 29.371256 1.9198006
+##                     ACF1 Theil's U
+## Training set -0.03499438        NA
+## Test set      0.84833491  2.223439
+\end{verbatim}
+
+\subsubsection{Model 2: NNAR + Fourier (K =
+2,12)}\label{model-2-nnar-fourier-k-212}
+
+We first tested NNAR + Fourier (K=2,12) and considered it our baseline
+model for forecasting load. This setup allowed us to capture the major
+seasonal patterns in the data using Fourier terms while using the
+flexibility of a neural network to model nonlinearities and irregular
+fluctuations. Choosing K = 2 and 12 offered a broader range of seasonal
+harmonics to start.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{K2 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{12}\NormalTok{)}
+\NormalTok{NN\_fit\_k212 }\OtherTok{\textless{}{-}} \FunctionTok{nnetar}\NormalTok{(ts\_daily\_train, }\AttributeTok{p =} \DecValTok{2}\NormalTok{, }\AttributeTok{P =} \DecValTok{2}\NormalTok{, }\AttributeTok{xreg =} \FunctionTok{fourier}\NormalTok{(ts\_daily\_train, }\AttributeTok{K =}\NormalTok{ K2))}
+\NormalTok{NN\_for\_k212 }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(NN\_fit\_k212, }\AttributeTok{h =}\NormalTok{ horizon, }\AttributeTok{xreg =} \FunctionTok{fourier}\NormalTok{(ts\_daily\_train, }\AttributeTok{K =}\NormalTok{ K2, }\AttributeTok{h =}\NormalTok{ horizon))}
+\FunctionTok{autoplot}\NormalTok{(ts\_daily\_test) }\SpecialCharTok{+} \FunctionTok{autolayer}\NormalTok{(NN\_for\_k212, }\AttributeTok{series =} \StringTok{"Model 2 Forecast"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{Bhuyan_Chuang_Martinez_CompetitionReport_S25_files/figure-latex/model2-nnar-k212-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{accuracy}\NormalTok{(NN\_for\_k212, ts\_daily\_test)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                        ME      RMSE      MAE        MPE      MAPE      MASE
+## Training set   0.09365173  149.9667  106.482 -0.4374611  3.205913 0.1383947
+## Test set     684.26635802 1967.6875 1631.578  6.2203166 32.524872 2.1205626
+##                     ACF1 Theil's U
+## Training set -0.09753951        NA
+## Test set      0.84422333  2.379214
+\end{verbatim}
+
+\subsubsection{Model 3: NNAR + Fourier (K = 2,12) +
+Temp}\label{model-3-nnar-fourier-k-212-temp}
+
+Including temperature as a regressor can help capture demand variations
+driven by weather. However, adding multiple regressors like temperature
+and humidity risks introducing multicollinearity, especially when both
+variables are correlated (e.g., hot days often being humid).
+Multicollinearity can lead to unstable neural network training,
+overfitting, and degraded forecasting performance if not carefully
+regularized. This model showed that temperature alone did not
+consistently improve MAPE, indicating that simpler seasonal Fourier
+terms were sufficient.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# NNAR + Fourier Model}
+\CommentTok{\# I chose to use a Neural Network Autoregressive (NNAR) model with Fourier terms (K = c(2, 12))}
+\CommentTok{\# to capture complex seasonal and nonlinear patterns in the daily electricity data.}
+\CommentTok{\# I initially experimented with smaller K values, but the fit was too rigid.}
+\CommentTok{\# Increasing K allowed the model to flexibly capture both short{-} and long{-}term seasonality.}
+
+\NormalTok{horizon }\OtherTok{\textless{}{-}} \FunctionTok{length}\NormalTok{(ts\_daily\_test)}
+
+\CommentTok{\# Fit the NNAR model with Fourier terms}
+\NormalTok{NNAR\_Fourier\_fit }\OtherTok{\textless{}{-}} \FunctionTok{nnetar}\NormalTok{(}
+\NormalTok{  ts\_daily\_train, }
+  \AttributeTok{p =} \DecValTok{2}\NormalTok{, }\AttributeTok{P =} \DecValTok{2}\NormalTok{, }
+  \AttributeTok{xreg =} \FunctionTok{fourier}\NormalTok{(ts\_daily\_train, }\AttributeTok{K =} \FunctionTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DecValTok{12}\NormalTok{))}
+\NormalTok{)}
+
+\CommentTok{\# Forecast using the fitted model}
+\NormalTok{NNAR\_Fourier\_forecast }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(}
+\NormalTok{  NNAR\_Fourier\_fit, }
+  \AttributeTok{h =}\NormalTok{ horizon, }
+  \AttributeTok{xreg =} \FunctionTok{fourier}\NormalTok{(ts\_daily\_train, }\AttributeTok{K =} \FunctionTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DecValTok{12}\NormalTok{), }\AttributeTok{h =}\NormalTok{ horizon)}
+\NormalTok{)}
+
+\CommentTok{\# Plot the forecast against the test data}
+\CommentTok{\# This visual check helped me confirm that the forecast captured both the trend and seasonal fluctuation well.}
+\FunctionTok{autoplot}\NormalTok{(ts\_daily\_test) }\SpecialCharTok{+} 
+  \FunctionTok{autolayer}\NormalTok{(NNAR\_Fourier\_forecast, }\AttributeTok{series =} \StringTok{"NNAR + Fourier (K=2,12)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{Bhuyan_Chuang_Martinez_CompetitionReport_S25_files/figure-latex/nnar_fourier_k212-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Calculate accuracy metrics}
+
+\FunctionTok{accuracy}\NormalTok{(NNAR\_Fourier\_forecast, ts\_daily\_test) }\CommentTok{\# Score 23.48}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                      ME      RMSE       MAE       MPE      MAPE      MASE
+## Training set  -1.451812  157.0403  112.8468 -0.526845  3.409342 0.1466671
+## Test set     810.274995 2098.2691 1786.5620  8.165844 35.452445 2.3219958
+##                    ACF1 Theil's U
+## Training set -0.1069410        NA
+## Test set      0.8549365  2.543657
+\end{verbatim}
+
+\subsubsection{Model 4: NNAR + Fourier (K =
+3,18)}\label{model-4-nnar-fourier-k-318}
+
+We tested NNAR + Fourier (K = 3,18) to explore whether adding more
+seasonal components would improve forecast accuracy. By increasing the
+number of Fourier terms, the model could capture more detailed seasonal
+fluctuations and smaller periodic patterns that might not be fully
+represented with lower K values.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{K4 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{3}\NormalTok{,}\DecValTok{18}\NormalTok{)}
+\NormalTok{NN\_fit\_k318 }\OtherTok{\textless{}{-}} \FunctionTok{nnetar}\NormalTok{(ts\_daily\_train, }\AttributeTok{p =} \DecValTok{2}\NormalTok{, }\AttributeTok{P =} \DecValTok{2}\NormalTok{, }\AttributeTok{xreg =} \FunctionTok{fourier}\NormalTok{(ts\_daily\_train, }\AttributeTok{K =}\NormalTok{ K4), }\AttributeTok{size =} \DecValTok{10}\NormalTok{, }\AttributeTok{decay =} \FloatTok{0.01}\NormalTok{, }\AttributeTok{maxNWts =} \DecValTok{2000}\NormalTok{)}
+\NormalTok{NN\_for\_k318 }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(NN\_fit\_k318, }\AttributeTok{h =}\NormalTok{ horizon, }\AttributeTok{xreg =} \FunctionTok{fourier}\NormalTok{(ts\_daily\_train, }\AttributeTok{K =}\NormalTok{ K4, }\AttributeTok{h =}\NormalTok{ horizon))}
+\FunctionTok{autoplot}\NormalTok{(ts\_daily\_test) }\SpecialCharTok{+} \FunctionTok{autolayer}\NormalTok{(NN\_for\_k318, }\AttributeTok{series =} \StringTok{"Model 4 Forecast"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{Bhuyan_Chuang_Martinez_CompetitionReport_S25_files/figure-latex/model4-nnar-k318-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{accuracy}\NormalTok{(NN\_for\_k318, ts\_daily\_test)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                       ME      RMSE      MAE        MPE      MAPE      MASE
+## Training set  -0.6116014  211.0185  148.925 -0.6799629  4.404385 0.1935579
+## Test set     868.5344580 1975.4318 1681.170  9.9637850 33.084252 2.1850175
+##                     ACF1 Theil's U
+## Training set -0.07437868        NA
+## Test set      0.85013678  2.385224
+\end{verbatim}
+
+\subsubsection{Model 5: TBATS}\label{model-5-tbats}
+
+We tested TBATS because it is designed to handle seasonal patterns,
+multiple seasonalities, and nonstationary behavior. In our case, TBATS
+did not perform as well as the NNAR + Fourier models in the Kaggle
+competition as load was just better forecasted by a more targeted
+combination of Fourier-seasonality and a nonlinear neural network,
+whereas TBATS oversmoothed or lagged behind sharp changes in load.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{TBATS\_fit }\OtherTok{\textless{}{-}} \FunctionTok{tbats}\NormalTok{(ts\_daily\_train)}
+\NormalTok{TBATS\_for }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(TBATS\_fit, }\AttributeTok{h =}\NormalTok{ horizon)}
+\FunctionTok{autoplot}\NormalTok{(ts\_daily\_test) }\SpecialCharTok{+} \FunctionTok{autolayer}\NormalTok{(TBATS\_for, }\AttributeTok{series =} \StringTok{"Model 5 Forecast"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{Bhuyan_Chuang_Martinez_CompetitionReport_S25_files/figure-latex/model5-tbats-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{accuracy}\NormalTok{(TBATS\_for, ts\_daily\_test)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                     ME      RMSE       MAE        MPE     MAPE      MASE
+## Training set  43.90081  501.3385  363.7827 -0.6194292 10.78758 0.4728086
+## Test set     711.90657 1376.0978 1083.3750  9.2346813 20.45227 1.4080633
+##                    ACF1 Theil's U
+## Training set 0.03361668        NA
+## Test set     0.79537200  1.553679
+\end{verbatim}
+
+\subsection{Model Comparison Table}\label{model-comparison-table}
+
+\subsubsection{Model Evaluation
+Discussion}\label{model-evaluation-discussion}
+
+Based on the validation MAPE values, \textbf{Model 1: NNAR + Fourier
+(K=2,8)} achieved the best performance. It effectively captured weekly
+and annual seasonal patterns while maintaining model simplicity.
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Model 1 (K=2,8)} showed strong generalization by balancing
+  underfitting and overfitting, and leveraging just enough Fourier terms
+  to capture dominant seasonality.
+\item
+  \textbf{Model 2 (K=2,12)} slightly overfitted to noise, leading to a
+  marginal increase in MAPE despite capturing more complex patterns.
+\item
+  \textbf{Model 3 (K=2,12) + Temp} demonstrated that including external
+  regressors such as temperature can introduce multicollinearity,
+  complicating the model without consistent forecasting gains.
+\item
+  \textbf{Model 4 (K=3,18)} increased the model's flexibility but also
+  risked overfitting due to high model complexity without significant
+  improvement in predictive accuracy.
+\item
+  \textbf{Model 5 (TBATS)} handled seasonality flexibly but did not
+  outperform simpler NNAR + Fourier models, indicating the electricity
+  demand series had relatively stable seasonality well captured by
+  Fourier harmonics.
+\end{itemize}
+
+Overall, simpler seasonal structure combined with neural networks
+provided the best generalization to unseen data.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.6528}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.1250}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.1250}}
+  >{\raggedleft\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.0972}}@{}}
+\caption{Performance Comparison of All 5 Models (Train/Test
+Evaluation)}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Model
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+RMSE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+MAE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+MAPE
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Model
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+RMSE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+MAE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+MAPE
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Model 1: NNAR + Fourier (K = c(2,8)) & 1824.995 & 1477.110 & 29.371 \\
+Model 2: NNAR + Fourier (K = c(2,12)) Baseline & 1967.688 & 1631.578 &
+32.525 \\
+Model 3: NNAR + Fourier (K = c(2,12)) on Test & 2098.269 & 1786.562 &
+35.452 \\
+Model 4: NNAR + Fourier (K = c(3,18)) & 1975.432 & 1681.170 & 33.084 \\
+Model 5: TBATS & 1376.098 & 1083.375 & 20.452 \\
+\end{longtable}
+
+\subsection{Final Forecast for 2011}\label{final-forecast-for-2011}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Define full time series}
+\NormalTok{ts\_full }\OtherTok{\textless{}{-}}\NormalTok{ ts\_electricity\_daily}
+\NormalTok{final\_dates }\OtherTok{\textless{}{-}} \FunctionTok{seq}\NormalTok{(}\FunctionTok{as.Date}\NormalTok{(}\StringTok{"2011{-}01{-}01"}\NormalTok{), }\FunctionTok{as.Date}\NormalTok{(}\StringTok{"2011{-}02{-}28"}\NormalTok{), }\AttributeTok{by =} \StringTok{"day"}\NormalTok{)}
+\NormalTok{final\_horizon }\OtherTok{\textless{}{-}} \FunctionTok{length}\NormalTok{(final\_dates)}
+
+\CommentTok{\# Create Fourier regressors}
+\NormalTok{K1 }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{,}\DecValTok{8}\NormalTok{)}
+\NormalTok{xreg\_full\_1 }\OtherTok{\textless{}{-}} \FunctionTok{fourier}\NormalTok{(ts\_full, }\AttributeTok{K =}\NormalTok{ K1)}
+\NormalTok{xreg\_fc\_1 }\OtherTok{\textless{}{-}} \FunctionTok{fourier}\NormalTok{(ts\_full, }\AttributeTok{K =}\NormalTok{ K1, }\AttributeTok{h =}\NormalTok{ final\_horizon)}
+
+\CommentTok{\# Fit Model 1 on full data}
+\NormalTok{fit\_nnar\_full }\OtherTok{\textless{}{-}} \FunctionTok{nnetar}\NormalTok{(ts\_full, }\AttributeTok{p =} \DecValTok{2}\NormalTok{, }\AttributeTok{P =} \DecValTok{2}\NormalTok{, }\AttributeTok{xreg =}\NormalTok{ xreg\_full\_1)}
+
+\CommentTok{\# Forecast for Jan{-}Feb 2011}
+\NormalTok{fc\_nnar\_full }\OtherTok{\textless{}{-}} \FunctionTok{forecast}\NormalTok{(fit\_nnar\_full, }\AttributeTok{h =}\NormalTok{ final\_horizon, }\AttributeTok{xreg =}\NormalTok{ xreg\_fc\_1)}
+
+\CommentTok{\# Save forecast}
+\NormalTok{final\_forecast\_df }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}\AttributeTok{date =}\NormalTok{ final\_dates, }\AttributeTok{load =} \FunctionTok{as.numeric}\NormalTok{(fc\_nnar\_full}\SpecialCharTok{$}\NormalTok{mean))}
+\FunctionTok{autoplot}\NormalTok{(fc\_nnar\_full) }\SpecialCharTok{+} \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Final Forecast Using Model 1: NNAR + Fourier (K=2,8)"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{Bhuyan_Chuang_Martinez_CompetitionReport_S25_files/figure-latex/final-forecast-model1-1} \end{center}
+
+The final model selection was \textbf{Model 1: NNAR + Fourier (K=2,8)}
+based on lowest validation MAPE when forecasting 2011. We retrained this
+model using the full dataset (2005--2010) and forecasted daily load for
+January 1 to February 28, 2011.
+
+\subsection{Conclusion}\label{conclusion}
+
+Through systematic model development and evaluation, we determined that
+\textbf{Model 1: NNAR + Fourier (K=2,8)} provided the most accurate
+forecasts. It effectively captured both weekly and yearly seasonal
+patterns while maintaining simplicity. Models with more Fourier terms or
+additional temperature regressors did not outperform this baseline.
+
+Our Kaggle submissions demonstrated steady improvement, culminating in a
+final forecast that surpassed the vanilla STL+ETS benchmark.
+
+\subsection{Acknowledgment of AI
+Assistance}\label{acknowledgment-of-ai-assistance}
+
+ChatGPT was used to assist with R Markdown formatting, report
+organization, and code cleaning. All modeling decisions, model
+selection, and data handling were conducted independently by the project
+team.
+
+\end{document}
